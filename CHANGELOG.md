@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.2 - 2026-07-24
+
+### Added
+
+- Added the project banner to the bilingual README for GitHub, npm, and Pi Packages presentation.
+
 ## 1.0.1 - 2026-07-24
 
 ### Changed

@@ -1,5 +1,7 @@
 # pi-agent-qqbot
 
+![pi-agent-qqbot banner](https://raw.githubusercontent.com/gtiders/pi-agent-qqbot/main/pi-agent-qqbot.png)
+
 > [English](#english) | [简体中文](#简体中文)
 
 <a id="english"></a>
@@ -41,13 +43,13 @@ pi install npm:pi-agent-qqbot
 You can also install a tagged GitHub release:
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.1
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.2
 ```
 
 When HTTPS access to GitHub is unavailable, use SSH:
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.1
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.2
 ```
 
 Completely exit and restart Pi after installation or upgrade.
@@ -214,13 +216,13 @@ pi install npm:pi-agent-qqbot
 也可以从 GitHub 的版本标签安装：
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.1
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.2
 ```
 
 如果本机无法通过 HTTPS 连接 GitHub，可使用 SSH：
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.1
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.2
 ```
 
 安装或升级后必须完整退出并重新启动 Pi。
