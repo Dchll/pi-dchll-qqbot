@@ -1,7 +1,13 @@
 import type {
 	ExtensionUIDialogOptions,
 	ExtensionUIContext,
+	KeybindingsManager,
+	Theme,
 } from "@earendil-works/pi-coding-agent";
+import type { Component, TUI } from "@earendil-works/pi-tui";
+
+type CustomComponent = Component & { dispose?(): void };
+type CustomOptions = Parameters<ExtensionUIContext["custom"]>[1];
 
 export interface RemoteUIInteractionHandle<T> {
 	result: Promise<T>;
@@ -12,9 +18,20 @@ export interface RemoteUIInteractionPort {
 	openConfirm(title: string, message: string): RemoteUIInteractionHandle<boolean> | undefined;
 	openSelect(title: string, options: string[]): RemoteUIInteractionHandle<string | undefined> | undefined;
 	openInput(title: string, placeholder?: string): RemoteUIInteractionHandle<string | undefined> | undefined;
+	openCustom(): RemoteCustomUIHandle | undefined;
 }
 
-/** Fan standard Pi dialogs out to TUI and QQ; the first completed side wins. */
+export interface RemoteCustomUIController {
+	render(width: number): string[];
+	input(data: string): void;
+}
+
+export interface RemoteCustomUIHandle {
+	attach(controller: RemoteCustomUIController): void;
+	close(): void;
+}
+
+/** Connect public extension dialogs and custom components to terminal and QQ. */
 export class DualUIBridge {
 	private readonly bound = new WeakSet<ExtensionUIContext>();
 
@@ -27,6 +44,7 @@ export class DualUIBridge {
 		const originalConfirm = ui.confirm.bind(ui);
 		const originalSelect = ui.select.bind(ui);
 		const originalInput = ui.input.bind(ui);
+		const originalCustom: ExtensionUIContext["custom"] = ui.custom.bind(ui);
 
 		ui.confirm = (title, message, options) => this.race(
 			() => this.remote.openConfirm(title, message),
@@ -43,6 +61,36 @@ export class DualUIBridge {
 			(raceOptions) => originalInput(title, placeholder, raceOptions),
 			options,
 		);
+		ui.custom = <T>(
+			factory: (
+				tui: TUI,
+				theme: Theme,
+				keybindings: KeybindingsManager,
+				done: (result: T) => void,
+			) => CustomComponent | Promise<CustomComponent>,
+			options?: CustomOptions,
+		): Promise<T> => {
+			const remote = this.remote.openCustom();
+			if (!remote) return originalCustom(factory, options);
+			const wrappedFactory = async (
+				tui: TUI,
+				theme: Theme,
+				keybindings: KeybindingsManager,
+				done: (result: T) => void,
+			): Promise<CustomComponent> => {
+				const component = await factory(tui, theme, keybindings, (result) => {
+					remote.close();
+					done(result);
+				});
+				const proxy = proxyCustomComponent(component, remote);
+				remote.attach({
+					render: (width) => proxy.render(width),
+					input: (data) => proxy.handleInput?.(data),
+				});
+				return proxy;
+			};
+			return originalCustom(wrappedFactory, options).finally(() => remote.close());
+		};
 	}
 
 	private race<T>(
@@ -99,6 +147,30 @@ export class DualUIBridge {
 			);
 		});
 	}
+}
+
+function proxyCustomComponent(component: CustomComponent, remote: RemoteCustomUIHandle): CustomComponent {
+	return new Proxy(component, {
+		get(target, property) {
+			if (property === "render") return (width: number) => target.render.call(target, width);
+			if (property === "handleInput") {
+				if (!target.handleInput) return undefined;
+				return (data: string) => target.handleInput?.call(target, data);
+			}
+			if (property === "invalidate") return () => target.invalidate.call(target);
+			if (property === "dispose") {
+				return () => {
+					remote.close();
+					target.dispose?.call(target);
+				};
+			}
+			const value = Reflect.get(target, property, target);
+			return typeof value === "function" ? value.bind(target) : value;
+		},
+		set(target, property, value) {
+			return Reflect.set(target, property, value, target);
+		},
+	});
 }
 
 function mergeSignal(

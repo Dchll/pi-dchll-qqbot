@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionUIContext, SessionInfo } from "@earendil-works/pi-coding-agent";
+import type { Component } from "@earendil-works/pi-tui";
 
 import { normalizeConfig } from "../../../src/infrastructure/config/normalize-config.ts";
 import { NativeSessionRuntime, type NativeTransport } from "../../../src/extension/native-session-runtime.ts";
@@ -174,6 +175,73 @@ test("thinking command renders level buttons and applies a selected level", asyn
 	assert.match(harness.sent.at(-1)?.text ?? "", /high/);
 });
 
+test("QQ and terminal operate the same custom TUI through keys and text", async () => {
+	const harness = createHarness();
+	await harness.runtime.start(harness.context);
+	harness.runtime.link(harness.context);
+	await harness.runtime.handleInbound(message("qq-custom-origin", "run a privileged operation"));
+
+	type Result = { action: "approved" | "denied"; password?: string };
+	let stage: "select" | "password" = "select";
+	let selected = 0;
+	let password = "";
+	const result = harness.context.ui.custom<Result>((_tui, _theme, _keys, done) => ({
+		render: () => stage === "select"
+			? [
+				"\u001b[31mROOT COMMAND REQUEST\u001b[0m",
+				selected === 0 ? "> Allow" : "  Allow",
+				selected === 1 ? "> Deny" : "  Deny",
+			]
+			: ["ROOT COMMAND REQUEST", "Password:", `> ${"●".repeat(password.length)}`],
+		handleInput: (data) => {
+			if (stage === "select") {
+				if (data === "\u001b[A") selected = 0;
+				else if (data === "\u001b[B") selected = 1;
+				else if (data === "\r") {
+					if (selected === 1) done({ action: "denied" });
+					else stage = "password";
+				}
+				return;
+			}
+			if (data.startsWith("\u001b[200~") && data.endsWith("\u001b[201~")) {
+				password += data.slice(6, -6);
+			} else if (data === "\r") done({ action: "approved", password });
+		},
+		invalidate() {},
+	}), { overlay: true });
+
+	await flushAsync();
+	assert.match(harness.sent.at(-1)?.text ?? "", /ROOT COMMAND REQUEST/);
+	assert.doesNotMatch(harness.sent.at(-1)?.text ?? "", /\u001b/);
+	harness.sendTerminalCustomInput("\u001b[B");
+	const refresh = keyboardCommands(harness.sent.at(-1)?.keyboard)
+		.find((value) => value.endsWith(" refresh"));
+	assert.ok(refresh);
+	await harness.runtime.handleInbound(message("qq-custom-refresh", refresh));
+	assert.match(harness.sent.at(-1)?.text ?? "", /> Deny/);
+
+	const up = keyboardCommands(harness.sent.at(-1)?.keyboard)
+		.find((value) => value.endsWith(" key up"));
+	assert.ok(up);
+	await harness.runtime.handleInbound(message("qq-custom-up", up));
+	const enter = keyboardCommands(harness.sent.at(-1)?.keyboard)
+		.find((value) => value.endsWith(" key enter"));
+	assert.ok(enter);
+	await harness.runtime.handleInbound(message("qq-custom-approve", enter));
+	assert.match(harness.sent.at(-1)?.text ?? "", /Password/);
+
+	const injectedBeforePassword = harness.injected.length;
+	await harness.runtime.handleInbound(message("qq-custom-password", "owner password"));
+	assert.equal(harness.injected.length, injectedBeforePassword);
+	assert.match(harness.sent.at(-1)?.text ?? "", /●{14}/);
+	const submit = keyboardCommands(harness.sent.at(-1)?.keyboard)
+		.find((value) => value.endsWith(" key enter"));
+	assert.ok(submit);
+	await harness.runtime.handleInbound(message("qq-custom-submit", submit));
+	assert.deepEqual(await result, { action: "approved", password: "owner password" });
+	assert.match(harness.sent.at(-1)?.text ?? "", /交互已完成/);
+});
+
 test("QQ approval wins the shared dialog and closes the terminal prompt", async () => {
 	const harness = createHarness();
 	await harness.runtime.start(harness.context);
@@ -272,6 +340,24 @@ test("standard dialogs stay terminal-only without an active QQ turn", async () =
 	assert.equal(harness.sent.length, sentBefore);
 	harness.resolveTerminalConfirm(true);
 	assert.equal(await result, true);
+});
+
+test("custom TUI stays terminal-only without an active QQ turn", async () => {
+	const harness = createHarness();
+	await harness.runtime.start(harness.context);
+	harness.runtime.link(harness.context);
+	const sentBefore = harness.sent.length;
+	const result = harness.context.ui.custom<string>((_tui, _theme, _keys, done) => ({
+		render: () => ["LOCAL CUSTOM UI"],
+		handleInput: (data) => {
+			if (data === "\r") done("terminal");
+		},
+		invalidate() {},
+	}));
+	await flushAsync();
+	assert.equal(harness.sent.length, sentBefore);
+	harness.sendTerminalCustomInput("\r");
+	assert.equal(await result, "terminal");
 });
 
 test("dialog cancellation invalidates the QQ token without choosing a result", async () => {
@@ -380,12 +466,14 @@ function createHarness(
 		cleanupCount: () => cleanups,
 		resolveTerminalConfirm: terminal.resolveConfirm,
 		terminalAbortCount: terminal.abortCount,
+		sendTerminalCustomInput: terminal.sendCustomInput,
 	};
 }
 
 function createTerminalUI() {
 	const confirmations: Array<(value: boolean) => void> = [];
 	let aborts = 0;
+	let customComponent: Component | undefined;
 	const pending = <T>(queue: Array<(value: T) => void>, fallback: T, signal?: AbortSignal): Promise<T> => new Promise((resolve) => {
 		let settled = false;
 		const finish = (value: T) => {
@@ -399,10 +487,21 @@ function createTerminalUI() {
 			finish(fallback);
 		}, { once: true });
 	});
+	const custom: ExtensionUIContext["custom"] = (factory) => new Promise((resolve, reject) => {
+		Promise.resolve(factory(
+			{ requestRender() {} } as never,
+			{} as never,
+			{} as never,
+			resolve,
+		)).then((component) => {
+			customComponent = component;
+		}, reject);
+	});
 	const ui = {
 		confirm: (_title: string, _message: string, options?: { signal?: AbortSignal }) => pending(confirmations, false, options?.signal),
 		select: (_title: string, _options: string[], options?: { signal?: AbortSignal }) => pending<string | undefined>([], undefined, options?.signal),
 		input: (_title: string, _placeholder?: string, options?: { signal?: AbortSignal }) => pending<string | undefined>([], undefined, options?.signal),
+		custom,
 		notify() {},
 	} as unknown as ExtensionUIContext;
 	return {
@@ -413,6 +512,10 @@ function createTerminalUI() {
 			resolve(value);
 		},
 		abortCount: () => aborts,
+		sendCustomInput(data: string) {
+			assert.ok(customComponent?.handleInput, "expected an active terminal custom component");
+			customComponent.handleInput(data);
+		},
 	};
 }
 

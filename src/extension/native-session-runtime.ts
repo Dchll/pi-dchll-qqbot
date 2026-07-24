@@ -363,7 +363,7 @@ export class NativeSessionRuntime {
 			await this.uiInteractions.handleCommand(message, normalized);
 			return;
 		}
-		if (normalized && await this.uiInteractions.handleInput(message, normalized)) return;
+		if (message.text.length > 0 && await this.uiInteractions.handleInput(message, message.text)) return;
 		if (normalized.startsWith("/")) {
 			await this.handleRemoteCommand(message, normalized);
 			return;

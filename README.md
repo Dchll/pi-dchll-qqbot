@@ -60,7 +60,9 @@ QQ 可用命令采用显式白名单：`/help`、`/status`、`/model`、`/thinki
 
 QQ 不能执行任何 `/qqbot-*` 本地控制命令。Pi 原生 `/new`、`/resume`、`/fork` 和 session switching 会保留 link 并更新到新 session。Terminal 发起的 Agent 回复不会镜像到 QQ。
 
-当 QQ 发起的 Pi 回合调用标准 `ctx.ui.confirm`、`ctx.ui.select` 或 `ctx.ui.input` 时，扩展会同时保留终端弹窗并发送 QQ 交互卡片；任意一端最先完成的响应生效，另一端的响应会失效。选择项会分页显示；文本输入直接回复下一条 QQ 文本消息。自定义终端组件和没有 QQ 来源消息的本地回合仍只在终端处理。
+当 QQ 发起的 Pi 回合调用标准 `ctx.ui.confirm`、`ctx.ui.select` 或 `ctx.ui.input` 时，扩展会同时保留终端弹窗并发送 QQ 交互卡片；任意一端最先完成的响应生效，另一端的响应会失效。选择项会分页显示；文本输入直接回复下一条 QQ 文本消息。
+
+扩展通过 `ctx.ui.custom()` 创建的自定义 TUI 也会连接到 QQ。QQ 卡片显示同一组件实例的终端快照，并提供方向键、翻页、Home/End、Tab、空格、退格、删除、确认、取消和刷新操作；直接回复的 QQ 文本按终端粘贴输入处理。终端与 QQ 因此共享组件状态和完成结果。Pi 核心内部未经过 `ctx.ui` 的原生界面、外部 PTY 程序和没有 QQ 来源消息的本地回合不在代理范围内。
 
 ### 所有权与安全
 
