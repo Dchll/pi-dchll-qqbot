@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.1 - 2026-07-24
+
+### Changed
+
+- Rewrote the npm README as a complete bilingual English and Simplified Chinese guide.
+- Aligned published Pi peer dependency metadata with Pi Packages discovery requirements.
+
 ## 1.0.0 - 2026-07-24
 
 First stable release.

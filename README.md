@@ -1,5 +1,184 @@
 # pi-agent-qqbot
 
+> [English](#english) | [简体中文](#简体中文)
+
+<a id="english"></a>
+
+## English
+
+Connect a QQ C2C conversation to the native Pi session that is already running in your terminal, using the official QQ Bot API.
+
+QQ is not a separate agent. It is a second input surface for the same Pi runtime: terminal and QQ share the working directory, model, tools, context, session history, and extension-created interaction UI.
+
+### Requirements
+
+- Pi `>=0.82.0 <1.0.0`
+- Node.js `>=22.19.0`
+- An official QQ bot with C2C direct messages enabled
+- Native Windows, macOS, or Linux
+
+WSL path translation and mixed Windows/WSL installations are not supported.
+
+### Highlights
+
+- Bind one configured QQ C2C owner to the active native Pi session.
+- Work from QQ with the same workspace, model, context, and session history.
+- Use QQ Keyboard controls for models, thinking levels, and native Pi sessions.
+- Deliver `ctx.ui.confirm()`, `select()`, and `input()` to both terminal and QQ. The first response from either side wins.
+- Operate extension-created `ctx.ui.custom()` remotely through a TUI snapshot, keys, and text input.
+- Receive images, voice, documents, and ordinary files without extension-level file count, type, or size quotas.
+- Send verified local files through QQ's official chunked-upload API.
+- Transfer Gateway ownership between local Pi processes without stopping either process.
+
+### Install
+
+Install the published npm package:
+
+```bash
+pi install npm:pi-agent-qqbot
+```
+
+You can also install a tagged GitHub release:
+
+```bash
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.1
+```
+
+When HTTPS access to GitHub is unavailable, use SSH:
+
+```bash
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.1
+```
+
+Completely exit and restart Pi after installation or upgrade.
+
+### Configure
+
+Create `~/.pi/agent/pi-agent-qqbot.json`. On Windows, this is `%USERPROFILE%\.pi\agent\pi-agent-qqbot.json`.
+
+```json
+{
+  "schemaVersion": 5,
+  "appId": "YOUR_QQBOT_APP_ID",
+  "clientSecret": "YOUR_QQBOT_APP_SECRET",
+  "sandbox": true,
+  "ownerOpenId": "YOUR_QQ_USER_OPENID",
+  "link": { "conflictPolicy": "ask" },
+  "inboundMedia": { "deniedKinds": [], "deniedExtensions": [] },
+  "outboundMedia": {
+    "enabled": false,
+    "deniedRoots": [],
+    "deniedKinds": [],
+    "deniedExtensions": []
+  },
+  "logging": { "level": "info" }
+}
+```
+
+Only schema 5 is accepted. Earlier configurations are neither read nor migrated.
+
+| Field | Meaning |
+| --- | --- |
+| `appId` | QQ bot application ID. |
+| `clientSecret` | QQ bot secret. Never commit a real value. |
+| `sandbox` | Use QQ's sandbox endpoint when `true`. |
+| `ownerOpenId` | The only QQ C2C user allowed to access Pi. |
+| `link.conflictPolicy` | `ask` requests terminal approval before takeover; `takeover` transfers ownership automatically. |
+| `inboundMedia.deniedKinds` | Deny `image`, `video`, `voice`, or `file`; an empty list denies no type. |
+| `inboundMedia.deniedExtensions` | Deny file extensions such as `.exe`; an empty list denies none. |
+| `inboundMedia.stt` | Optional OpenAI-compatible speech-to-text settings: `baseUrl`, `apiKeyEnv`, and `model`. |
+| `outboundMedia.enabled` | Master switch for local file delivery; defaults to `false`. |
+| `outboundMedia.deniedRoots` | Real directory roots that must never be sent; an empty list permits every path readable by the current account. |
+| `outboundMedia.deniedKinds` | Deny outbound media types; an empty list denies none. |
+| `outboundMedia.deniedExtensions` | Deny outbound extensions; an empty list denies none. |
+| `logging.level` | `error`, `info`, or `debug`. |
+
+Media policies use denylist semantics. An omitted field or empty list adds no product-level restriction. QQ platform limits and file-integrity checks still apply.
+
+### Start and Link
+
+The extension does not connect to QQ automatically. Run these commands in the local terminal for each new Pi process:
+
+```text
+/qqbot-start
+/qqbot-link
+```
+
+| Local command | Purpose |
+| --- | --- |
+| `/qqbot-start` | Start the QQ Gateway. A restart in the same process preserves the logical link. |
+| `/qqbot-stop` | Stop transport only; preserve the link and native Pi session. |
+| `/qqbot-link` | Bind the configured owner to the current Pi runtime. |
+| `/qqbot-unlink` | Remove the logical link and invalidate pending QQ replies. |
+| `/qqbot-status` | Show Gateway, ownership, link, session, model, and queue state. |
+| `/qqbot-takeover` | Take Gateway ownership from another local Pi process. |
+
+QQ cannot run `/qqbot-*` commands.
+
+### QQ Commands
+
+QQ commands are explicitly allowlisted and appear as a Keyboard when supported by the client.
+
+| Command | Purpose |
+| --- | --- |
+| `/help` | Show the command menu. |
+| `/status` | Show the active link and Pi state. |
+| `/model [provider/model]` | Browse, search, or switch the active model. |
+| `/thinking [level]` | Show or change the thinking level. |
+| `/new [name]` | Create a native Pi session, optionally named. |
+| `/sessions [query]` | List or search native Pi sessions. |
+| `/resume <id-or-name>` | Switch to a uniquely matching native Pi session. |
+| `/name <name>` | Rename the current session. |
+| `/compact [instructions]` | Compact the active context. |
+| `/stop` | Abort the active Pi turn. |
+
+Normal QQ text is injected into the linked Pi session and uses Pi's native follow-up delivery while Pi is busy. Only output from QQ-originated turns is returned to QQ; output from terminal-originated turns remains in the terminal.
+
+### Shared Interaction UI
+
+When a QQ-originated turn opens `ctx.ui.confirm()`, `ctx.ui.select()`, or `ctx.ui.input()`, both QQ and terminal receive the interaction. The first side to complete it wins and invalidates the other side.
+
+For extension-created `ctx.ui.custom()`, both surfaces operate the same component instance. QQ receives a 72-column TUI snapshot with terminal control sequences removed, plus directional, paging, Home/End, Tab, space, backspace, delete, submit, cancel, and refresh controls. Normal QQ text is injected as terminal bracketed-paste input, including into password fields.
+
+Pi core TUI, external PTY programs, and custom UI opened only by terminal-originated turns are outside this relay's scope.
+
+### Media
+
+Inbound media has no extension-level count, type, individual-size, or total-size quotas. Images go to image-capable models; supported documents are extracted within remaining context budget; voice uses QQ ASR text when available; unknown files remain as temporary local resources for Pi tools.
+
+Inbound downloads still enforce HTTPS, SSRF protection, bounded redirects, cancellation, and stalled-network detection.
+
+With outbound media enabled, the `qq_send_local_file` tool can send a local file only to the original conversation of the current QQ turn. Candidates are checked with `realpath`, regular-file identity, hard-link, symlink/junction, and rename-race validation. QQ's 200 MB upload limit and passive-reply count remain platform constraints.
+
+### Current Boundaries
+
+- One configured QQ C2C owner only. Group messages and other users are ignored before attachment handling and agent work.
+- The Gateway does not start automatically with the extension.
+- Pi 0.82 can discover Skills, prompt templates, and extension commands, but does not expose a complete public input-dispatch API. QQ therefore cannot generically execute every Skill, template, or third-party slash command; it supports only the allowlisted commands above.
+- Restart Pi completely after upgrading an installed package.
+
+### Troubleshooting
+
+- Invalid configuration: verify `schemaVersion`, `appId`, `clientSecret`, and `ownerOpenId`.
+- No QQ response: run `/qqbot-status`, then run `/qqbot-start` and `/qqbot-link` locally.
+- Gateway owned by another Pi: run `/qqbot-takeover`, or retain `conflictPolicy: "ask"` and approve in the terminal.
+- Cannot send local files: set `outboundMedia.enabled` to `true`, then restart Pi.
+- QQ buttons unavailable: send the corresponding text command shown on the card.
+
+### Development
+
+See the [development guide](https://github.com/gtiders/pi-agent-qqbot/blob/main/docs/DEVELOPMENT.md) for architecture, development, and release procedures, and [CHANGELOG](https://github.com/gtiders/pi-agent-qqbot/blob/main/CHANGELOG.md) for release history.
+
+### License
+
+Apache-2.0
+
+---
+
+<a id="简体中文"></a>
+
+## 简体中文
+
 通过 QQ 官方机器人 API，将一个 QQ 私聊连接到终端中正在运行的原生 Pi 会话。
 
 QQ 不是另起一个 Agent，而是同一 Pi runtime 的第二个输入端：终端与 QQ 共享工作目录、模型、工具、上下文、会话历史，以及扩展创建的交互界面。
@@ -35,13 +214,13 @@ pi install npm:pi-agent-qqbot
 也可以从 GitHub 的版本标签安装：
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.0
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.1
 ```
 
 如果本机无法通过 HTTPS 连接 GitHub，可使用 SSH：
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.0
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.1
 ```
 
 安装或升级后必须完整退出并重新启动 Pi。

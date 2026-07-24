@@ -39,7 +39,7 @@ try {
   assert.deepEqual(Object.keys(metadata.peerDependencies).sort(), ["@earendil-works/pi-coding-agent", "@earendil-works/pi-tui", "typebox"]);
   assert.equal(metadata.publishConfig?.access, "public");
   assert.match(metadata.repository?.url ?? "", /github\.com\/gtiders\/pi-agent-qqbot/);
-  for (const range of Object.values(metadata.peerDependencies)) assert.notEqual(range, "*");
+  for (const range of Object.values(metadata.peerDependencies)) assert.equal(range, "*");
   console.log(`package check passed (${paths.length} files)`);
 } finally {
   await rm(workspace, { recursive: true, force: true });
