@@ -6,7 +6,7 @@ import type {
 import { Type } from "typebox";
 
 import { ConfigRepositoryError, FileConfigRepository } from "../infrastructure/config/config-repository.ts";
-import { CONFIG_PATH, validateConfig } from "../infrastructure/config/normalize-config.ts";
+import { CONFIG_PATH, validateBootstrapConfig, validateConfig } from "../infrastructure/config/normalize-config.ts";
 import type { PiAgentQQBotConfig } from "../application/ports.ts";
 import { NativeSessionRuntime } from "./native-session-runtime.ts";
 import { formatBytes } from "../infrastructure/media/outbound-media.ts";
@@ -52,20 +52,42 @@ export default function registerExtension(pi: ExtensionAPI): void {
 	};
 
 	pi.registerCommand("qqbot-start", {
-		description: "Start the QQ Gateway for the current Pi runtime",
+		description: "Bootstrap and save the first QQ C2C owner OpenID",
 		handler: async (_args, ctx) => {
-			if (!requireConfig(ctx)) return;
+			const bootstrapInvalid = validateBootstrapConfig(currentConfig);
+			if (bootstrapInvalid) {
+				ctx.ui.notify(`pi-agent-qqbot 配置无效：${bootstrapInvalid}`, "warning");
+				return;
+			}
+			if (currentConfig.ownerOpenId) {
+				ctx.ui.notify("QQ owner 已配置；请运行 /qqbot-link 启动并绑定当前 Pi 会话。", "info");
+				return;
+			}
 			try {
 				runtime.configure(currentConfig);
-				await runtime.start(ctx, {
-					confirmTakeover: ({ pid }) => ctx.ui.confirm(
-						"接管 QQ Gateway？",
-						`本机 Pi 进程 ${pid} 当前拥有该 QQ Bot。接管只会停止旧进程的 Gateway，不会终止旧 Pi。`,
-					),
+				await runtime.startBootstrap(ctx, {
+					claimOwner: async (userOpenId) => {
+						const approved = await ctx.ui.confirm(
+							"绑定 QQ 用户？",
+							`检测到 QQ C2C user_openid：${userOpenId}\n确认将其写入本机 pi-agent-qqbot 配置？`,
+						);
+						if (!approved) return false;
+						try {
+							const updated = { ...currentConfig, ownerOpenId: userOpenId };
+							await configRepository.save(updated);
+							currentConfig = updated;
+							runtime.configure(updated);
+							ctx.ui.notify("QQ owner 已写入配置。现在运行 /qqbot-link 启动并绑定当前 Pi 会话。", "info");
+							return true;
+						} catch (error) {
+							ctx.ui.notify(`无法写入 QQ 配置：${safeError(error)}`, "error");
+							return false;
+						}
+					},
 				});
-				ctx.ui.notify(`pi-agent-qqbot started\n${runtime.statusText()}`, "info");
+				ctx.ui.notify("QQ 首次绑定已启动。请从 QQ 私聊机器人发送任意消息，然后在本地终端确认 OpenID。", "info");
 			} catch (error) {
-				ctx.ui.notify(`pi-agent-qqbot 启动失败：${safeError(error)}`, "error");
+				ctx.ui.notify(`QQ 首次绑定启动失败：${safeError(error)}`, "error");
 			}
 		},
 	});
@@ -76,8 +98,14 @@ export default function registerExtension(pi: ExtensionAPI): void {
 			if (!requireConfig(ctx)) return;
 			try {
 				runtime.configure(currentConfig);
+				await runtime.start(ctx, {
+					confirmTakeover: ({ pid }) => ctx.ui.confirm(
+						"接管 QQ Gateway？",
+						`本机 Pi 进程 ${pid} 当前拥有该 QQ Bot。接管只会停止旧进程的 Gateway，不会终止旧 Pi。`,
+					),
+				});
 				const link = runtime.link(ctx);
-				ctx.ui.notify(`QQ 已绑定到当前 Pi 会话 ${link.currentSessionId}`, "info");
+				ctx.ui.notify(`QQ Gateway 已启动并绑定到当前 Pi 会话 ${link.currentSessionId}`, "info");
 			} catch (error) {
 				ctx.ui.notify(`pi-agent-qqbot link 失败：${safeError(error)}`, "error");
 			}

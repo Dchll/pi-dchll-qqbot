@@ -133,9 +133,16 @@ function stringArray(value: unknown): string[] {
 }
 
 export function validateConfig(config: PiAgentQQBotConfig): string | undefined {
+	const bootstrapInvalid = validateBootstrapConfig(config);
+	if (bootstrapInvalid) return bootstrapInvalid;
+	if (!config.ownerOpenId) return "missing ownerOpenId";
+	return undefined;
+}
+
+/** Validation required before the local first-owner bootstrap flow can connect. */
+export function validateBootstrapConfig(config: PiAgentQQBotConfig): string | undefined {
 	if (!config.appId) return "missing appId";
 	if (!config.clientSecret.trim()) return "missing clientSecret";
-	if (!config.ownerOpenId) return "missing ownerOpenId";
 	const stt = config.inboundMedia.stt;
 	if (stt && (!stt.baseUrl || !stt.model || !stt.apiKeyEnv)) return "invalid inboundMedia.stt configuration";
 	return undefined;

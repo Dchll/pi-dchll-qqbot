@@ -105,7 +105,7 @@ extension command
 
 ### 4.3 `/qqbot-link`
 
-Gateway 必须已经 running。link 保存 appId、ownerOpenId、runtimeId、generation 和当前 native session。每次 unlink/rebind 会改变 generation，旧 QQ 回合因此无法在新 link 上回复。
+`/qqbot-link` 会启动 Gateway 并建立 link。link 保存 appId、ownerOpenId、runtimeId、generation 和当前 native session。每次 unlink/rebind 会改变 generation，旧 QQ 回合因此无法在新 link 上回复。`/qqbot-start` 仅用于首次 owner 引导：它不建立 link、不将消息送入 Agent，只将首个私聊 OpenID 交给终端确认；确认后原子写入 schema 5 配置并停止 Gateway。
 
 ### 4.4 takeover
 

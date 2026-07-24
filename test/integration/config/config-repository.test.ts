@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { ConfigRepositoryError, FileConfigRepository } from "../../../src/infrastructure/config/config-repository.ts";
+import { normalizeConfig } from "../../../src/infrastructure/config/normalize-config.ts";
 
 async function withRoot(run: (root: string) => Promise<void>): Promise<void> {
 	const root = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-config-"));
@@ -48,5 +49,21 @@ test("classifies malformed JSON and non-object roots", async () => {
 				(error: unknown) => error instanceof ConfigRepositoryError && error.code === "invalid_json",
 			);
 		}
+	});
+});
+
+test("persists a confirmed schema 5 owner configuration", async () => {
+	await withRoot(async (root) => {
+		const path = join(root, "nested", "pi-agent-qqbot.json");
+		const repository = new FileConfigRepository(path);
+		await repository.save(normalizeConfig({
+			schemaVersion: 5,
+			appId: "app",
+			clientSecret: "secret",
+			ownerOpenId: "OWNER-1",
+		}));
+		const loaded = await repository.load();
+		assert.equal(loaded.config.ownerOpenId, "OWNER-1");
+		assert.equal(loaded.config.appId, "app");
 	});
 });

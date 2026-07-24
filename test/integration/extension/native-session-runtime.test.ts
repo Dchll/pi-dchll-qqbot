@@ -27,6 +27,32 @@ test("start link stop start retains the logical link and current native session"
 	assert.equal(harness.transportCount(), 2);
 });
 
+test("bootstrap captures a private owner candidate without injecting an agent turn", async () => {
+	const harness = createHarness();
+	const bootstrapConfig = normalizeConfig({ schemaVersion: 5, appId: "app", clientSecret: "secret" });
+	const candidates: string[] = [];
+	let approve = false;
+	harness.runtime.configure(bootstrapConfig);
+	await harness.runtime.startBootstrap(harness.context, {
+		async claimOwner(userOpenId) {
+			candidates.push(userOpenId);
+			return approve;
+		},
+	});
+
+	await harness.deliverInbound(message("bootstrap-refused", "hello", "CANDIDATE-1"));
+	assert.deepEqual(candidates, ["CANDIDATE-1"]);
+	assert.equal(harness.runtime.state.gateway, "running");
+	assert.equal(harness.injected.length, 0);
+	assert.equal(harness.sent.length, 0);
+
+	approve = true;
+	await harness.deliverInbound(message("bootstrap-approved", "hello", "CANDIDATE-1"));
+	assert.deepEqual(candidates, ["CANDIDATE-1", "CANDIDATE-1"]);
+	assert.equal(harness.runtime.state.gateway, "stopped");
+	assert.equal(harness.injected.length, 0);
+});
+
 test("only QQ-originated settled output is returned to QQ", async () => {
 	const harness = createHarness();
 	await harness.runtime.start(harness.context);
@@ -389,10 +415,12 @@ function createHarness(
 	let thinkingLevel = "medium";
 	let transports = 0;
 	let cleanups = 0;
+	let onInbound: ((message: QQInboundMessage) => void) | undefined;
 	const terminal = createTerminalUI();
 	let runtime!: NativeSessionRuntime;
-	const createTransport = (_config: typeof config, callbacks: { onState(state: "connected"): void }): NativeTransport => {
+	const createTransport = (_config: typeof config, callbacks: { onState(state: "connected"): void; onInbound(message: QQInboundMessage): void }): NativeTransport => {
 		transports++;
+		onInbound = callbacks.onInbound;
 		return {
 			gateway: {
 				async connect() { callbacks.onState("connected"); },
@@ -464,6 +492,12 @@ function createHarness(
 		setThinkingLevels,
 		transportCount: () => transports,
 		cleanupCount: () => cleanups,
+		async deliverInbound(inbound: QQInboundMessage) {
+			assert.ok(onInbound, "expected a connected Gateway callback");
+			onInbound(inbound);
+			await flushAsync();
+			await flushAsync();
+		},
 		resolveTerminalConfirm: terminal.resolveConfirm,
 		terminalAbortCount: terminal.abortCount,
 		sendTerminalCustomInput: terminal.sendCustomInput,
@@ -523,8 +557,8 @@ async function flushAsync(): Promise<void> {
 	await new Promise((resolve) => setImmediate(resolve));
 }
 
-function message(id: string, text: string): QQInboundMessage {
-	return { id, type: "private", text, userOpenId: "USER-1", attachments: [], raw: {}, receivedAt: Date.now() };
+function message(id: string, text: string, userOpenId = "USER-1"): QQInboundMessage {
+	return { id, type: "private", text, userOpenId, attachments: [], raw: {}, receivedAt: Date.now() };
 }
 
 function agentEnd(text: string) {

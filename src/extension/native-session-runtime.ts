@@ -12,7 +12,7 @@ import { deliverFormattedReply } from "../application/deliver-reply.ts";
 import type { PiAgentQQBotConfig, QQInboundMessage, QQKeyboard, QQReplyTarget } from "../application/ports.ts";
 import { ReplyBudget } from "../domain/reply-budget.ts";
 import { NativeSessionLinkState, type TurnOrigin } from "../domain/native-session-link.ts";
-import { validateConfig } from "../infrastructure/config/normalize-config.ts";
+import { validateBootstrapConfig, validateConfig } from "../infrastructure/config/normalize-config.ts";
 import { AttachmentPipeline } from "../infrastructure/media/attachment-pipeline.ts";
 import { QQOutboundDeliveryContext, type QQOutboundKind } from "../infrastructure/media/outbound-media.ts";
 import { QQApi, QQApiError } from "../infrastructure/qq/api.ts";
@@ -122,6 +122,10 @@ export interface StartOptions {
 	confirmTakeover?: (record: { pid: number }) => Promise<boolean>;
 }
 
+export interface BootstrapOptions {
+	claimOwner(userOpenId: string): Promise<boolean>;
+}
+
 interface PendingQQInjection {
 	prompt: string;
 	origin: Extract<TurnOrigin, { source: "qq" }>;
@@ -152,6 +156,7 @@ export class NativeSessionRuntime {
 	private ownership: OwnershipControl | undefined;
 	private startPromise: Promise<void> | undefined;
 	private stopPromise: Promise<void> | undefined;
+	private bootstrapClaiming = false;
 
 	constructor(options: NativeSessionRuntimeOptions = {}) {
 		this.state = options.state ?? new NativeSessionLinkState();
@@ -234,6 +239,40 @@ export class NativeSessionRuntime {
 				this.state.setGateway("failed");
 				await this.ownership?.release().catch(() => undefined);
 				this.ownership = undefined;
+				throw error;
+			} finally {
+				this.startPromise = undefined;
+			}
+		})();
+		return this.startPromise;
+	}
+
+	async startBootstrap(ctx: ExtensionCommandContext, options: BootstrapOptions): Promise<void> {
+		this.bridge.captureCommandContext(ctx);
+		if (this.state.gateway === "running") throw new Error("QQ Gateway is already running; use /qqbot-link after stopping it");
+		if (this.startPromise) return this.startPromise;
+		const config = this.requireConfig();
+		const invalid = validateBootstrapConfig(config);
+		if (invalid) throw new Error(invalid);
+		this.state.setGateway("starting");
+		this.startPromise = (async () => {
+			try {
+				const transport = this.createTransport(config, {
+					onInbound: (message) => { void this.handleBootstrapInbound(message, options.claimOwner); },
+					onState: (connection, detail) => {
+						if (connection === "connected") this.state.setGateway("running");
+						else if (connection === "connecting") this.state.setGateway("starting");
+						else if (connection === "error") this.state.setGateway("failed");
+						else if (this.state.gateway !== "stopping") this.state.setGateway("stopped");
+						if (detail && config.logging.level === "debug") console.error(`[pi-agent-qqbot] ${detail}`);
+					},
+					log: (message) => { if (config.logging.level === "debug") console.error(`[pi-agent-qqbot] ${message}`); },
+				});
+				this.transport = transport;
+				await transport.gateway.connect();
+			} catch (error) {
+				this.transport = undefined;
+				this.state.setGateway("failed");
 				throw error;
 			} finally {
 				this.startPromise = undefined;
@@ -407,6 +446,17 @@ export class NativeSessionRuntime {
 		} catch (error) {
 			if (!cleanupOwnedByRuntime) await prepared.cleanup();
 			throw error;
+		}
+	}
+
+	private async handleBootstrapInbound(message: QQInboundMessage, claimOwner: BootstrapOptions["claimOwner"]): Promise<void> {
+		if (this.state.gateway !== "running" || this.bootstrapClaiming) return;
+		if (message.type !== "private" || !message.userOpenId) return;
+		this.bootstrapClaiming = true;
+		try {
+			if (await claimOwner(message.userOpenId)) await this.stop();
+		} finally {
+			this.bootstrapClaiming = false;
 		}
 	}
 

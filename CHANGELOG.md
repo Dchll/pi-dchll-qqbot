@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.3 - 2026-07-24
+
+### Changed
+
+- Reassigned `/qqbot-start` to first-owner bootstrap and moved normal Gateway startup into `/qqbot-link`.
+- The first private QQ sender can now be confirmed locally and persisted as `ownerOpenId` without manual OpenID lookup.
+
 ## 1.0.2 - 2026-07-24
 
 ### Added

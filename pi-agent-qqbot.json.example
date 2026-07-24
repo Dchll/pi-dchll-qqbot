@@ -3,7 +3,7 @@
   "appId": "YOUR_QQBOT_APP_ID",
   "clientSecret": "YOUR_QQBOT_APP_SECRET",
   "sandbox": true,
-  "ownerOpenId": "YOUR_QQ_USER_OPENID",
+  "ownerOpenId": "",
   "link": {
     "conflictPolicy": "ask"
   },

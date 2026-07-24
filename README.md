@@ -43,13 +43,13 @@ pi install npm:pi-agent-qqbot
 You can also install a tagged GitHub release:
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.2
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.3
 ```
 
 When HTTPS access to GitHub is unavailable, use SSH:
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.2
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.3
 ```
 
 Completely exit and restart Pi after installation or upgrade.
@@ -64,7 +64,7 @@ Create `~/.pi/agent/pi-agent-qqbot.json`. On Windows, this is `%USERPROFILE%\.pi
   "appId": "YOUR_QQBOT_APP_ID",
   "clientSecret": "YOUR_QQBOT_APP_SECRET",
   "sandbox": true,
-  "ownerOpenId": "YOUR_QQ_USER_OPENID",
+  "ownerOpenId": "",
   "link": { "conflictPolicy": "ask" },
   "inboundMedia": { "deniedKinds": [], "deniedExtensions": [] },
   "outboundMedia": {
@@ -77,14 +77,14 @@ Create `~/.pi/agent/pi-agent-qqbot.json`. On Windows, this is `%USERPROFILE%\.pi
 }
 ```
 
-Only schema 5 is accepted. Earlier configurations are neither read nor migrated.
+Only schema 5 is accepted. Earlier configurations are neither read nor migrated. For first-time setup, leave `ownerOpenId` empty and use `/qqbot-start` to discover and confirm it locally.
 
 | Field | Meaning |
 | --- | --- |
 | `appId` | QQ bot application ID. |
 | `clientSecret` | QQ bot secret. Never commit a real value. |
 | `sandbox` | Use QQ's sandbox endpoint when `true`. |
-| `ownerOpenId` | The only QQ C2C user allowed to access Pi. |
+| `ownerOpenId` | The only QQ C2C user allowed to access Pi. Leave it empty only during first-time bootstrap. |
 | `link.conflictPolicy` | `ask` requests terminal approval before takeover; `takeover` transfers ownership automatically. |
 | `inboundMedia.deniedKinds` | Deny `image`, `video`, `voice`, or `file`; an empty list denies no type. |
 | `inboundMedia.deniedExtensions` | Deny file extensions such as `.exe`; an empty list denies none. |
@@ -99,18 +99,19 @@ Media policies use denylist semantics. An omitted field or empty list adds no pr
 
 ### Start and Link
 
-The extension does not connect to QQ automatically. Run these commands in the local terminal for each new Pi process:
+The extension does not connect to QQ automatically. For normal use, run this command in the local terminal for each new Pi process:
 
 ```text
-/qqbot-start
 /qqbot-link
 ```
 
+For first-time setup only: save `appId` and `clientSecret`, leave `ownerOpenId` empty, run `/qqbot-start`, then send any C2C message to the bot. Pi displays the detected `user_openid` locally; after terminal confirmation it saves the value. Run `/qqbot-link` afterwards.
+
 | Local command | Purpose |
 | --- | --- |
-| `/qqbot-start` | Start the QQ Gateway. A restart in the same process preserves the logical link. |
+| `/qqbot-start` | First-time bootstrap only. Temporarily starts the Gateway to discover the first private sender OpenID; terminal confirmation writes it to the config and stops bootstrap. |
 | `/qqbot-stop` | Stop transport only; preserve the link and native Pi session. |
-| `/qqbot-link` | Bind the configured owner to the current Pi runtime. |
+| `/qqbot-link` | Start the QQ Gateway and bind the configured owner to the current Pi runtime. |
 | `/qqbot-unlink` | Remove the logical link and invalidate pending QQ replies. |
 | `/qqbot-status` | Show Gateway, ownership, link, session, model, and queue state. |
 | `/qqbot-takeover` | Take Gateway ownership from another local Pi process. |
@@ -155,14 +156,15 @@ With outbound media enabled, the `qq_send_local_file` tool can send a local file
 ### Current Boundaries
 
 - One configured QQ C2C owner only. Group messages and other users are ignored before attachment handling and agent work.
-- The Gateway does not start automatically with the extension.
+- The Gateway does not start automatically with the extension. Run `/qqbot-link` for normal operation.
 - Pi 0.82 can discover Skills, prompt templates, and extension commands, but does not expose a complete public input-dispatch API. QQ therefore cannot generically execute every Skill, template, or third-party slash command; it supports only the allowlisted commands above.
 - Restart Pi completely after upgrading an installed package.
 
 ### Troubleshooting
 
 - Invalid configuration: verify `schemaVersion`, `appId`, `clientSecret`, and `ownerOpenId`.
-- No QQ response: run `/qqbot-status`, then run `/qqbot-start` and `/qqbot-link` locally.
+- No QQ response: run `/qqbot-status`, then run `/qqbot-link` locally.
+- Missing `ownerOpenId`: leave it empty, run `/qqbot-start`, message the bot from QQ, and confirm the displayed OpenID in the terminal.
 - Gateway owned by another Pi: run `/qqbot-takeover`, or retain `conflictPolicy: "ask"` and approve in the terminal.
 - Cannot send local files: set `outboundMedia.enabled` to `true`, then restart Pi.
 - QQ buttons unavailable: send the corresponding text command shown on the card.
@@ -216,13 +218,13 @@ pi install npm:pi-agent-qqbot
 也可以从 GitHub 的版本标签安装：
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.2
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.3
 ```
 
 如果本机无法通过 HTTPS 连接 GitHub，可使用 SSH：
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.2
+pi install git:git@github.com/gtiders/pi-agent-qqbot@v1.0.3
 ```
 
 安装或升级后必须完整退出并重新启动 Pi。
@@ -237,7 +239,7 @@ pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.2
   "appId": "YOUR_QQBOT_APP_ID",
   "clientSecret": "YOUR_QQBOT_APP_SECRET",
   "sandbox": true,
-  "ownerOpenId": "YOUR_QQ_USER_OPENID",
+  "ownerOpenId": "",
   "link": {
     "conflictPolicy": "ask"
   },
@@ -257,14 +259,14 @@ pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.2
 }
 ```
 
-扩展只接受 schema 5，不读取也不迁移过时配置。
+扩展只接受 schema 5，不读取也不迁移过时配置。首次配置时可将 `ownerOpenId` 留空，通过 `/qqbot-start` 在本地发现并确认写入。
 
 | 字段 | 含义 |
 | --- | --- |
 | `appId` | QQ 机器人应用 ID。 |
 | `clientSecret` | QQ 机器人密钥，不得提交真实值。 |
 | `sandbox` | `true` 表示使用 QQ 沙箱端点。 |
-| `ownerOpenId` | 唯一允许访问 Pi 的 QQ C2C 用户。 |
+| `ownerOpenId` | 唯一允许访问 Pi 的 QQ C2C 用户；仅首次引导时可留空。 |
 | `link.conflictPolicy` | `ask` 在接管前请求终端确认；`takeover` 自动转移所有权。 |
 | `inboundMedia.deniedKinds` | 禁止 `image`、`video`、`voice` 或 `file`；空数组表示不禁止类型。 |
 | `inboundMedia.deniedExtensions` | 禁止 `.exe` 等扩展名；空数组表示不禁止扩展名。 |
@@ -279,20 +281,21 @@ pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.2
 
 ## 启动与绑定
 
-扩展加载时不会自动连接 QQ。每个新的 Pi 进程都需要在本地终端执行：
+扩展加载时不会自动连接 QQ。正常使用时，每个新的 Pi 进程都需要在本地终端执行：
 
 ```text
-/qqbot-start
 /qqbot-link
 ```
+
+仅首次配置：先写入 `appId` 和 `clientSecret`，将 `ownerOpenId` 留空，执行 `/qqbot-start`，再从 QQ 私聊机器人发送任意消息。Pi 会在本地显示收到的 `user_openid`；终端确认后自动写入配置。随后执行 `/qqbot-link`。
 
 本地专用命令：
 
 | 命令 | 作用 |
 | --- | --- |
-| `/qqbot-start` | 启动 QQ Gateway；同进程重启会保留逻辑 link。 |
+| `/qqbot-start` | 仅首次引导使用。临时启动 Gateway 发现第一位私聊用户的 OpenID；终端确认后写入配置并停止引导。 |
 | `/qqbot-stop` | 只停止传输，保留 link 和当前原生 Pi 会话。 |
-| `/qqbot-link` | 将配置的 owner 绑定到当前 Pi runtime。 |
+| `/qqbot-link` | 启动 QQ Gateway，并将配置的 owner 绑定到当前 Pi runtime。 |
 | `/qqbot-unlink` | 解除逻辑 link，并使未完成的旧 QQ 回复失效。 |
 | `/qqbot-status` | 查看 Gateway、所有权、link、会话、模型和队列状态。 |
 | `/qqbot-takeover` | 从本机另一个 Pi 进程接管 Gateway。 |
@@ -337,14 +340,15 @@ Pi 核心 TUI、外部 PTY 程序，以及仅由终端回合打开的自定义�
 ## 当前边界
 
 - 只支持一个配置的 QQ C2C owner；群消息和其他用户会在附件处理与 Agent 工作前被忽略。
-- Gateway 不会随扩展自动启动。
+- Gateway 不会随扩展自动启动；日常运行请执行 `/qqbot-link`。
 - Pi 0.82 可以发现 Skills、提示词模板和扩展命令，但没有公开完整输入分发 API。因此 QQ 不能通用执行任意 Skill、模板或第三方 slash command，只能使用上面的白名单命令。
 - 升级已安装包后必须完整重启 Pi。
 
 ## 故障排查
 
 - 提示配置无效：检查 `schemaVersion`、`appId`、`clientSecret` 和 `ownerOpenId`。
-- QQ 没有响应：先运行 `/qqbot-status`，再在本地执行 `/qqbot-start` 和 `/qqbot-link`。
+- QQ 没有响应：先运行 `/qqbot-status`，再在本地执行 `/qqbot-link`。
+- 缺少 `ownerOpenId`：将其留空，执行 `/qqbot-start`，从 QQ 向机器人发消息，并在终端确认显示的 OpenID。
 - Gateway 被其他 Pi 占用：执行 `/qqbot-takeover`，或保留 `conflictPolicy: "ask"` 并在终端批准。
 - 无法发送本地文件：将 `outboundMedia.enabled` 设置为 `true`，然后重启 Pi。
 - QQ 按钮不可用：直接发送卡片中显示的对应文字命令。

@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 
 import {
 	normalizeConfig,
@@ -7,7 +8,7 @@ import {
 } from "./normalize-config.ts";
 
 export class ConfigRepositoryError extends Error {
-	constructor(readonly code: "permission_denied" | "invalid_json" | "invalid_path" | "unsupported_schema", message: string, readonly cause?: unknown) {
+	constructor(readonly code: "permission_denied" | "invalid_json" | "invalid_path" | "unsupported_schema" | "write_failed", message: string, readonly cause?: unknown) {
 		super(message);
 		this.name = "ConfigRepositoryError";
 	}
@@ -38,6 +39,18 @@ export class FileConfigRepository {
 				throw new ConfigRepositoryError("unsupported_schema", error.message, error);
 			}
 			throw new ConfigRepositoryError("invalid_json", "Config is not valid JSON", error);
+		}
+	}
+
+	async save(config: LoadConfigResult["config"]): Promise<void> {
+		const directory = dirname(this.path);
+		const temporary = join(directory, `.${Date.now()}-pi-agent-qqbot.json.tmp`);
+		try {
+			await mkdir(directory, { recursive: true });
+			await writeFile(temporary, `${JSON.stringify(config, null, "\t")}\n`, { encoding: "utf8", mode: 0o600 });
+			await rename(temporary, this.path);
+		} catch (error) {
+			throw new ConfigRepositoryError("write_failed", "Cannot save config", error);
 		}
 	}
 }

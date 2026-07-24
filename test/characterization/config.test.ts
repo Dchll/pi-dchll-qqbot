@@ -4,6 +4,7 @@ import test from "node:test";
 import {
 	normalizeConfig,
 	UnsupportedConfigSchemaError,
+	validateBootstrapConfig,
 	validateConfig,
 } from "../../src/infrastructure/config/normalize-config.ts";
 
@@ -55,4 +56,11 @@ test("requires credentials and exactly one owner identity", () => {
 	assert.match(validateConfig(normalizeConfig({ schemaVersion: 5, ownerOpenId: "USER" })) ?? "", /appId/);
 	assert.match(validateConfig(normalizeConfig({ schemaVersion: 5, appId: "app", ownerOpenId: "USER" })) ?? "", /clientSecret/);
 	assert.match(validateConfig(normalizeConfig({ schemaVersion: 5, appId: "app", clientSecret: "secret" })) ?? "", /ownerOpenId/);
+});
+
+test("allows credential-complete first-owner bootstrap only", () => {
+	const bootstrap = normalizeConfig({ schemaVersion: 5, appId: "app", clientSecret: "secret" });
+	assert.equal(validateBootstrapConfig(bootstrap), undefined);
+	assert.match(validateConfig(bootstrap) ?? "", /ownerOpenId/);
+	assert.match(validateBootstrapConfig(normalizeConfig({ schemaVersion: 5, clientSecret: "secret" })) ?? "", /appId/);
 });
