@@ -1,93 +1,177 @@
 # pi-agent-qqbot
 
-`pi-agent-qqbot` connects one QQ C2C conversation to the currently active native Pi session. A QQ message behaves like another user typing into the same Pi runtime: it uses the same working directory, model, tools, context, and session history.
+通过 QQ 官方机器人 API，将一个 QQ 私聊连接到终端中正在运行的原生 Pi 会话。
 
-The extension supports native macOS, Linux, and Windows. WSL and mixed Windows/WSL path translation are not supported.
+QQ 不是另起一个 Agent，而是同一 Pi runtime 的第二个输入端：终端与 QQ 共享工作目录、模型、工具、上下文、会话历史，以及扩展创建的交互界面。
 
-## 中文
+## 环境要求
 
-### 安装
+- Pi `>=0.82.0 <1.0.0`
+- Node.js `>=22.19.0`
+- 已启用 C2C 私聊消息的 QQ 官方机器人
+- 原生 Windows、macOS 或 Linux
 
-本包尚未发布到 npm。安装依赖后，用绝对路径安装本地 checkout：
+不支持 WSL 路径转换，也不支持 Windows/WSL 混合安装。
+
+## 主要能力
+
+- 将唯一配置的 QQ C2C owner 绑定到当前原生 Pi 会话。
+- 从 QQ 操作同一工作目录、模型、上下文和会话历史。
+- 使用 QQ Keyboard 切换模型、思考等级和原生 Pi 会话。
+- 将 `ctx.ui.confirm()`、`select()`、`input()` 同时发送到终端和 QQ，任意一端先完成即生效。
+- 通过 TUI 快照、按键和文字输入远程操作扩展创建的 `ctx.ui.custom()`。
+- 接收图片、语音、文档及普通文件，不增加扩展层文件数量、格式或大小配额。
+- 通过 QQ 官方分片上传 API 发送经过本地文件身份校验的文件。
+- 在本机多个 Pi 进程间转移 Gateway 所有权，不终止任何 Pi 进程。
+
+## 安装
+
+安装 npm 正式版本：
 
 ```bash
-npm install
-pi install /absolute/path/to/pi-agent-qqbot
+pi install npm:pi-agent-qqbot
 ```
 
-PowerShell:
+也可以从 GitHub 的版本标签安装：
 
-```powershell
-npm install
-pi install C:\absolute\path\to\pi-agent-qqbot
+```bash
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.0
 ```
 
-安装或升级后完整退出并重启 Pi。
+如果本机无法通过 HTTPS 连接 GitHub，可使用 SSH：
 
-### 配置
+```bash
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.0
+```
 
-扩展只读取 `~/.pi/agent/pi-agent-qqbot.json`；Windows 对应 `%USERPROFILE%\.pi\agent\pi-agent-qqbot.json`。复制 `pi-agent-qqbot.json.example` 后填写：
+安装或升级后必须完整退出并重新启动 Pi。
 
-- 一个 QQ Bot `appId` 和 `clientSecret`
-- 唯一的 QQ user `ownerOpenId`
-- `sandbox` 是否使用 QQ 沙箱环境
+## 配置
 
-真实配置和密钥不能提交到 Git。扩展只支持该用户的 C2C 私聊，群消息在附件下载和 Agent 工作前直接忽略。
+创建 `~/.pi/agent/pi-agent-qqbot.json`。Windows 路径为 `%USERPROFILE%\.pi\agent\pi-agent-qqbot.json`。
 
-`0.8.0` 只接受显式的 `schemaVersion: 5`。旧版本和缺少版本号的配置会以 `unsupported_schema` 拒绝加载，不做兼容读取或字段迁移。升级时必须按示例一次性替换旧结构。`deniedKinds`、`deniedExtensions` 和 `deniedRoots` 都是黑名单；空数组或省略字段表示不增加对应限制。
+```json
+{
+  "schemaVersion": 5,
+  "appId": "YOUR_QQBOT_APP_ID",
+  "clientSecret": "YOUR_QQBOT_APP_SECRET",
+  "sandbox": true,
+  "ownerOpenId": "YOUR_QQ_USER_OPENID",
+  "link": {
+    "conflictPolicy": "ask"
+  },
+  "inboundMedia": {
+    "deniedKinds": [],
+    "deniedExtensions": []
+  },
+  "outboundMedia": {
+    "enabled": false,
+    "deniedRoots": [],
+    "deniedKinds": [],
+    "deniedExtensions": []
+  },
+  "logging": {
+    "level": "info"
+  }
+}
+```
 
-`outboundMedia.enabled` 仍是本地文件出站总开关。启用后，空的 `deniedRoots` 允许发送 Pi 进程当前账户可读取的所有普通文件。可选外部语音转写配置放在 `inboundMedia.stt`，包含 `baseUrl`、`apiKeyEnv` 和 `model`；QQ 已提供 ASR 文本时总是优先使用 QQ 文本。
+扩展只接受 schema 5，不读取也不迁移过时配置。
 
-### 使用
+| 字段 | 含义 |
+| --- | --- |
+| `appId` | QQ 机器人应用 ID。 |
+| `clientSecret` | QQ 机器人密钥，不得提交真实值。 |
+| `sandbox` | `true` 表示使用 QQ 沙箱端点。 |
+| `ownerOpenId` | 唯一允许访问 Pi 的 QQ C2C 用户。 |
+| `link.conflictPolicy` | `ask` 在接管前请求终端确认；`takeover` 自动转移所有权。 |
+| `inboundMedia.deniedKinds` | 禁止 `image`、`video`、`voice` 或 `file`；空数组表示不禁止类型。 |
+| `inboundMedia.deniedExtensions` | 禁止 `.exe` 等扩展名；空数组表示不禁止扩展名。 |
+| `inboundMedia.stt` | 可选的 OpenAI 兼容语音转写配置：`baseUrl`、`apiKeyEnv`、`model`。 |
+| `outboundMedia.enabled` | 本地文件出站总开关，默认 `false`。 |
+| `outboundMedia.deniedRoots` | 永远禁止发送的真实目录根路径；空数组允许所有当前账户可读路径。 |
+| `outboundMedia.deniedKinds` | 禁止出站媒体类型；空数组表示不禁止类型。 |
+| `outboundMedia.deniedExtensions` | 禁止出站文件扩展名；空数组表示不禁止扩展名。 |
+| `logging.level` | `error`、`info` 或 `debug`。 |
 
-扩展加载时不会连接 QQ。每次新 Pi 进程都需要在本机终端执行：
+媒体配置统一采用黑名单语义：字段缺失或数组为空表示不增加产品限制。QQ 平台硬限制和文件完整性校验仍然生效。
+
+## 启动与绑定
+
+扩展加载时不会自动连接 QQ。每个新的 Pi 进程都需要在本地终端执行：
 
 ```text
 /qqbot-start
 /qqbot-link
 ```
 
-本地控制命令：
+本地专用命令：
 
-- `/qqbot-start` 启动 Gateway；同进程重启会复用已有 link
-- `/qqbot-stop` 只停止 Gateway，保留 link 和当前 Pi session
-- `/qqbot-link` 将唯一配置的 C2C 用户绑定到当前 Pi runtime
-- `/qqbot-unlink` 解除 link，并使尚未完成的旧 QQ 回复失效
-- `/qqbot-status` 查看 Gateway、link 和 native Pi session 状态
-- `/qqbot-takeover` 从本机另一个 Pi 进程接管 Gateway
+| 命令 | 作用 |
+| --- | --- |
+| `/qqbot-start` | 启动 QQ Gateway；同进程重启会保留逻辑 link。 |
+| `/qqbot-stop` | 只停止传输，保留 link 和当前原生 Pi 会话。 |
+| `/qqbot-link` | 将配置的 owner 绑定到当前 Pi runtime。 |
+| `/qqbot-unlink` | 解除逻辑 link，并使未完成的旧 QQ 回复失效。 |
+| `/qqbot-status` | 查看 Gateway、所有权、link、会话、模型和队列状态。 |
+| `/qqbot-takeover` | 从本机另一个 Pi 进程接管 Gateway。 |
 
-QQ 可用命令采用显式白名单：`/help`、`/status`、`/model`、`/thinking`、`/new`、`/sessions`、`/resume`、`/name`、`/compact`、`/stop`。`/help`、`/model`、`/thinking` 和会话选择会发送 QQ Keyboard；不支持按钮时仍可手动发送对应命令。
+QQ 端不能执行任何 `/qqbot-*` 命令。
 
-QQ 不能执行任何 `/qqbot-*` 本地控制命令。Pi 原生 `/new`、`/resume`、`/fork` 和 session switching 会保留 link 并更新到新 session。Terminal 发起的 Agent 回复不会镜像到 QQ。
+## QQ 命令
 
-当 QQ 发起的 Pi 回合调用标准 `ctx.ui.confirm`、`ctx.ui.select` 或 `ctx.ui.input` 时，扩展会同时保留终端弹窗并发送 QQ 交互卡片；任意一端最先完成的响应生效，另一端的响应会失效。选择项会分页显示；文本输入直接回复下一条 QQ 文本消息。
+QQ 命令采用显式白名单，并在客户端支持时显示 Keyboard：
 
-扩展通过 `ctx.ui.custom()` 创建的自定义 TUI 也会连接到 QQ。QQ 卡片显示同一组件实例的终端快照，并提供方向键、翻页、Home/End、Tab、空格、退格、删除、确认、取消和刷新操作；直接回复的 QQ 文本按终端粘贴输入处理。终端与 QQ 因此共享组件状态和完成结果。Pi 核心内部未经过 `ctx.ui` 的原生界面、外部 PTY 程序和没有 QQ 来源消息的本地回合不在代理范围内。
+| 命令 | 作用 |
+| --- | --- |
+| `/help` | 显示命令菜单。 |
+| `/status` | 查看当前 link 和 Pi 状态。 |
+| `/model [provider/model]` | 浏览、搜索或切换当前模型。 |
+| `/thinking [level]` | 查看或切换思考等级。 |
+| `/new [name]` | 新建原生 Pi 会话，可同时命名。 |
+| `/sessions [query]` | 列出或搜索原生 Pi 会话。 |
+| `/resume <id-or-name>` | 切换到唯一匹配的原生 Pi 会话。 |
+| `/name <name>` | 重命名当前会话。 |
+| `/compact [instructions]` | 压缩当前上下文。 |
+| `/stop` | 中止当前 Pi 回合。 |
 
-### 所有权与安全
+普通 QQ 文本会注入已绑定的 Pi 会话；Pi 忙碌时按原生 follow-up 投递。只有 QQ 发起的回合会回复 QQ，终端发起的输出只留在终端。
 
-- 仅接受配置中的唯一 C2C 用户；其他用户和群消息在附件处理或 Agent 工作前被忽略。
-- `link.conflictPolicy: "ask"` 会在新 Pi 本地确认；`"takeover"` 会直接请求旧 owner 交接。
-- 接管使用 appId 范围的 owner record、PID、随机 nonce 和 loopback endpoint；不会终止旧 Pi 进程。
-- 入站媒体不设置扩展层数量、格式、单文件或总量上限；未知格式作为临时文件交给 Pi 工具按需读取。
-- 入站下载仍强制 HTTPS、SSRF 防护、有限重定向、取消处理和网络停滞检测；这些是安全不变量，不是产品配额。
-- 本地文件出站总开关默认关闭；启用后路径采用黑名单策略，默认允许当前 Pi 账户可读取的目录，`outboundMedia.deniedRoots` 中的 root 及其子目录禁止发送。
-- 所有候选文件仍经过 realpath、symlink/junction、hard-link、rename-race 和普通文件校验，禁用目录按规范化后的真实路径判定。
-- 出站使用 QQ 官方分片上传协议。图片、视频和语音超过软限制时自动降级为普通文件；200 MB 硬限制和每条消息 4 次被动回复来自 QQ 平台，不是用户配置。
-- 模型不能指定 QQ target、`msg_id` 或回复序号。
+## 双端交互界面
 
-## English
+QQ 发起的回合打开 `ctx.ui.confirm()`、`ctx.ui.select()` 或 `ctx.ui.input()` 时，终端与 QQ 会同时收到交互。任意一端最先完成即生效，另一端随即失效。
 
-Copy `pi-agent-qqbot.json.example` to `~/.pi/agent/pi-agent-qqbot.json` (or `%USERPROFILE%\.pi\agent\pi-agent-qqbot.json` on Windows). Configure one `ownerOpenId`, then run `/qqbot-start` and `/qqbot-link` locally.
+扩展创建的 `ctx.ui.custom()` 在两端共享同一个组件实例。QQ 会收到去除终端控制序列后的 72 列 TUI 快照，并提供方向键、翻页、Home/End、Tab、空格、退格、删除、确认、取消和刷新。普通 QQ 文本按终端 bracketed paste 输入，包括密码字段。
 
-Loading Pi never starts the QQ Gateway. `/qqbot-stop` pauses transport without dropping the in-process link; `/qqbot-start` resumes it. Native Pi session changes retain the link. Only QQ-originated runs reply to QQ, while terminal-originated output remains local.
+Pi 核心 TUI、外部 PTY 程序，以及仅由终端回合打开的自定义界面不在代理范围内。
 
-## Development
+## 媒体
 
-```bash
-npm run verify
-npm run test:package
-npm run smoke:pi -- .
-```
+入站媒体没有扩展层数量、格式、单文件或总大小配额。图片会传给支持图片的模型，已支持的文档按剩余上下文预算提取，语音优先使用 QQ ASR 文本，未知文件保留为临时本地资源供 Pi 工具读取。
 
-No publish job is configured. Publishing, remote pushes, and remote repository changes are outside this local verification workflow.
+入站下载仍强制 HTTPS、SSRF 防护、有限重定向、取消处理和网络停滞检测。
+
+启用出站媒体后，`qq_send_local_file` 工具只能向当前 QQ 回合的原始会话发送本地文件。候选文件会经过 realpath、普通文件身份、hard-link、symlink/junction 和 rename-race 校验。QQ 的 200 MB 上传上限与被动回复次数仍是平台约束。
+
+## 当前边界
+
+- 只支持一个配置的 QQ C2C owner；群消息和其他用户会在附件处理与 Agent 工作前被忽略。
+- Gateway 不会随扩展自动启动。
+- Pi 0.82 可以发现 Skills、提示词模板和扩展命令，但没有公开完整输入分发 API。因此 QQ 不能通用执行任意 Skill、模板或第三方 slash command，只能使用上面的白名单命令。
+- 升级已安装包后必须完整重启 Pi。
+
+## 故障排查
+
+- 提示配置无效：检查 `schemaVersion`、`appId`、`clientSecret` 和 `ownerOpenId`。
+- QQ 没有响应：先运行 `/qqbot-status`，再在本地执行 `/qqbot-start` 和 `/qqbot-link`。
+- Gateway 被其他 Pi 占用：执行 `/qqbot-takeover`，或保留 `conflictPolicy: "ask"` 并在终端批准。
+- 无法发送本地文件：将 `outboundMedia.enabled` 设置为 `true`，然后重启 Pi。
+- QQ 按钮不可用：直接发送卡片中显示的对应文字命令。
+
+## 开发
+
+开发、架构与发布流程见 [开发指南](https://github.com/gtiders/pi-agent-qqbot/blob/main/docs/DEVELOPMENT.md)，发布记录见 [CHANGELOG](https://github.com/gtiders/pi-agent-qqbot/blob/main/CHANGELOG.md)。
+
+## License
+
+Apache-2.0
