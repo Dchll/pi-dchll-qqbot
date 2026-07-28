@@ -1,6 +1,8 @@
-# pi-agent-qqbot
+<p>
+  <img src="https://raw.githubusercontent.com/gtiders/pi-agent-qqbot/main/pi-agent-qqbot.png" alt="Pi Agent QQBot" width="1100">
+</p>
 
-![pi-agent-qqbot banner](https://raw.githubusercontent.com/gtiders/pi-agent-qqbot/main/pi-agent-qqbot.png)
+# Pi Agent QQBot
 
 > [English](#english) | [简体中文](#简体中文)
 
@@ -8,9 +10,13 @@
 
 ## English
 
-Connect a QQ C2C conversation to the native Pi session that is already running in your terminal, using the official QQ Bot API.
+Connect a QQ C2C conversation to the native [Pi](https://pi.dev/) session that is already running in your terminal, using the official QQ Bot API.
+
+### Why This Exists
 
 QQ is not a separate agent. It is a second input surface for the same Pi runtime: terminal and QQ share the working directory, model, tools, context, session history, and extension-created interaction UI.
+
+Use the same live coding session from QQ when you are away from the terminal, without creating a second agent, duplicating context, or exposing a general-purpose remote command shell.
 
 ### Requirements
 
@@ -43,13 +49,13 @@ pi install npm:pi-agent-qqbot
 You can also install a tagged GitHub release:
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.3
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.4
 ```
 
 When HTTPS access to GitHub is unavailable, use SSH:
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.3
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.4
 ```
 
 Completely exit and restart Pi after installation or upgrade.
@@ -185,7 +191,11 @@ Apache-2.0
 
 通过 QQ 官方机器人 API，将一个 QQ 私聊连接到终端中正在运行的原生 Pi 会话。
 
+## 为什么需要它
+
 QQ 不是另起一个 Agent，而是同一 Pi runtime 的第二个输入端：终端与 QQ 共享工作目录、模型、工具、上下文、会话历史，以及扩展创建的交互界面。
+
+离开终端时也能从 QQ 继续使用同一个实时编码会话，无需另起 Agent、复制上下文，也不会把 Pi 暴露成通用远程命令终端。
 
 ## 环境要求
 
@@ -218,13 +228,13 @@ pi install npm:pi-agent-qqbot
 也可以从 GitHub 的版本标签安装：
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.3
+pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.4
 ```
 
 如果本机无法通过 HTTPS 连接 GitHub，可使用 SSH：
 
 ```bash
-pi install git:git@github.com/gtiders/pi-agent-qqbot@v1.0.3
+pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.4
 ```
 
 安装或升级后必须完整退出并重新启动 Pi。

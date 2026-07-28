@@ -1,7 +1,7 @@
 {
   "name": "pi-agent-qqbot",
-  "version": "1.0.3",
-  "description": "Connect the official QQ Bot API to a local Pi coding agent.",
+  "version": "1.0.4",
+  "description": "Pi extension that connects the official QQ Bot API to the active native Pi coding agent session.",
   "license": "Apache-2.0",
   "type": "module",
   "author": "XiaoSQM",
@@ -20,9 +20,13 @@
     "pi-package",
     "pi",
     "pi-extension",
+    "qq",
     "qqbot",
     "qq-bot",
-    "coding-agent"
+    "coding-agent",
+    "instant-messaging",
+    "native-session",
+    "remote-access"
   ],
   "files": [
     "src",
@@ -34,7 +38,8 @@
   "pi": {
     "extensions": [
       "./src/index.ts"
-    ]
+    ],
+    "image": "https://raw.githubusercontent.com/gtiders/pi-agent-qqbot/main/pi-agent-qqbot.png"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

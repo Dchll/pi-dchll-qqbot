@@ -25,6 +25,7 @@ try {
   const [result] = JSON.parse(packed.stdout);
   const paths = result.files.map((file) => file.path);
   for (const required of ["src/index.ts", "README.md", "CHANGELOG.md", "LICENSE", "pi-agent-qqbot.json.example"]) assert.ok(paths.includes(required), `missing ${required}`);
+  assert.ok(!paths.includes("pi-agent-qqbot.png"), "banner should remain remotely hosted instead of inflating the runtime package");
   for (const path of paths) {
     for (const forbidden of [/\.test\.ts$/, /^test\//, /^docs\//, /pi-agent-qqbot\.json$/, /\.env/, /\.git/, /\.pi-subagents/]) assert.doesNotMatch(path, forbidden);
   }
@@ -38,6 +39,8 @@ try {
   const metadata = JSON.parse(await readFile(join(consumer, "node_modules", "pi-agent-qqbot", "package.json"), "utf8"));
   assert.deepEqual(Object.keys(metadata.peerDependencies).sort(), ["@earendil-works/pi-coding-agent", "@earendil-works/pi-tui", "typebox"]);
   assert.equal(metadata.publishConfig?.access, "public");
+  assert.ok(metadata.keywords?.includes("pi-package"));
+  assert.equal(metadata.pi?.image, "https://raw.githubusercontent.com/gtiders/pi-agent-qqbot/main/pi-agent-qqbot.png");
   assert.match(metadata.repository?.url ?? "", /github\.com\/gtiders\/pi-agent-qqbot/);
   for (const range of Object.values(metadata.peerDependencies)) assert.equal(range, "*");
   console.log(`package check passed (${paths.length} files)`);

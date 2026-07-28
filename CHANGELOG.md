@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.4 - 2026-07-28
+
+### Changed
+
+- Added Pi Package Gallery preview metadata while keeping the banner remotely hosted to avoid inflating the npm tarball.
+- Refined npm search metadata and clarified the bilingual README introduction and purpose.
+
 ## 1.0.3 - 2026-07-24
 
 ### Changed
