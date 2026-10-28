@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.0.2 - 2026-10-28
+
+### Changed
+
+- Rewrote the README as paired Chinese and English paragraphs with a concise quick-start guide and feature reference.
+- Added a prominent testing-stage notice to the README.
+
+### Fixed
+
+- Assigned shared Steering replies to the latest input origin, preventing QQ replies from being dropped or terminal replies from leaking to QQ.
+
 ## 0.0.1 - 2026-10-28
 
 Initial independent release of `pi-dchll-qqbot`, forked from `gtiders/pi-agent-qqbot` 1.0.4.
@@ -26,4 +37,3 @@ Initial independent release of `pi-dchll-qqbot`, forked from `gtiders/pi-agent-q
 ### Fixed
 
 - Matched pending QQ prompts independently of the host-reported input source, covering both extension and RPC injection paths.
-- Assigned shared Steering replies to the latest input origin, preventing QQ replies from being dropped or terminal replies from leaking to QQ.

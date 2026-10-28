@@ -1,5 +1,11 @@
 # Pi Dchll QQBot
 
+## 测试阶段 / Testing stage
+
+**当前项目处于测试阶段，请在非生产环境试用。功能、配置和命令可能随版本调整，目前仅在 Pi 1.4.0 测试通过。**
+
+**This project is in the testing stage. Use it in non-production environments. Features, configuration, and commands may change between releases, and testing has been performed only with Pi 1.4.0.**
+
 Pi Dchll QQBot 是一个 Pi 扩展，通过 QQ 官方 Bot API 把 QQ 私聊连接到电脑中正在运行的原生 Pi 会话。它不是独立的 Agent，而是同一 Pi 会话的另一个输入和回复端。
 
 Pi Dchll QQBot is a Pi extension that connects QQ private chats to a native Pi session running on your computer through the official QQ Bot API. It is not a separate agent; QQ is another input and reply surface for the same Pi session.
