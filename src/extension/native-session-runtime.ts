@@ -13,6 +13,7 @@ import type { PiAgentQQBotConfig, QQInboundMessage, QQKeyboard, QQReplyTarget } 
 import { ReplyBudget } from "../domain/reply-budget.ts";
 import { NativeSessionLinkState, type TurnOrigin } from "../domain/native-session-link.ts";
 import { validateBootstrapConfig, validateConfig } from "../infrastructure/config/normalize-config.ts";
+import { createDebugLogger } from "../infrastructure/logging/debug-logger.ts";
 import { AttachmentPipeline } from "../infrastructure/media/attachment-pipeline.ts";
 import { QQOutboundDeliveryContext, type QQOutboundKind } from "../infrastructure/media/outbound-media.ts";
 import { QQApi, QQApiError } from "../infrastructure/qq/api.ts";
@@ -221,6 +222,7 @@ export class NativeSessionRuntime {
 					this.state.adopt(claim.transferredLink);
 					this.state.updateSession(currentSession);
 				}
+				const debugLog = createDebugLogger(config);
 				const transport = this.createTransport(config, {
 					onInbound: (message) => { void this.handleInbound(message); },
 					onState: (connection, detail) => {
@@ -228,9 +230,9 @@ export class NativeSessionRuntime {
 					else if (connection === "connecting") this.state.setGateway("starting");
 					else if (connection === "error") this.state.setGateway("failed");
 					else if (this.state.gateway !== "stopping") this.state.setGateway("stopped");
-					if (detail && config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${detail}`);
+					if (detail) debugLog(detail);
 				},
-				log: (message) => { if (config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${message}`); },
+				log: debugLog,
 				});
 				this.transport = transport;
 				await transport.gateway.connect();
@@ -257,6 +259,7 @@ export class NativeSessionRuntime {
 		this.state.setGateway("starting");
 		this.startPromise = (async () => {
 			try {
+				const debugLog = createDebugLogger(config);
 				const transport = this.createTransport(config, {
 					onInbound: (message) => { void this.handleBootstrapInbound(message, options.claimOwner); },
 					onState: (connection, detail) => {
@@ -264,9 +267,9 @@ export class NativeSessionRuntime {
 						else if (connection === "connecting") this.state.setGateway("starting");
 						else if (connection === "error") this.state.setGateway("failed");
 						else if (this.state.gateway !== "stopping") this.state.setGateway("stopped");
-						if (detail && config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${detail}`);
+						if (detail) debugLog(detail);
 					},
-					log: (message) => { if (config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${message}`); },
+					log: debugLog,
 				});
 				this.transport = transport;
 				await transport.gateway.connect();

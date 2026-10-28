@@ -1,6 +1,11 @@
 # Changelog
 
 All notable user-facing changes to pi-dchll-qqbot are documented in this file. Versions follow semantic versioning. During the 0.0.x testing stage, features, configuration, and commands may change between releases.
+## 0.0.4 - 2026-10-28
+
+### Fixed
+
+- Routed Gateway debug diagnostics to a local log file instead of `console.error`, preventing normal reconnect and resume messages from appearing as Pi error notifications.
 
 ## 0.0.3 - 2026-10-28
 

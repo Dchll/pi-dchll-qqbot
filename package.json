@@ -1,6 +1,6 @@
 {
   "name": "pi-dchll-qqbot",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Pi extension that connects the official QQ Bot API to the active native Pi coding agent session.",
   "license": "Apache-2.0",
   "type": "module",

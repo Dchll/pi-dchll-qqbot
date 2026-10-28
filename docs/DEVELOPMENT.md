@@ -250,7 +250,7 @@ QQ 平台每条消息最多四次被动回复。`ReplyBudget` 是唯一序号分
 按下面顺序收集证据，避免从猜测开始改代码：
 
 1. 运行 `/qqbot-status`，记录 Gateway、Link、Session、Model、Origin queue。
-2. 临时把 `logging.level` 设为 `debug` 并重启 Pi，只记录状态与错误，不记录凭据或用户输入。
+2. 临时把 `logging.level` 设为 `debug` 并重启 Pi，查看 `~/.pi/agent/pi-dchll-qqbot.debug.log`。只记录状态与错误，不记录凭据或用户输入，也不把调试日志写入 Pi 的错误通知。
 3. 确定问题属于 transport、identity/link、command、origin、UI、media 或 formatting 哪一层。
 4. 先运行上表对应的最小测试文件。
 5. 用现有 factory/port 注入 fake transport 或 context 增加回归测试，不连接真实 QQ。
