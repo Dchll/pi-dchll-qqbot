@@ -306,8 +306,8 @@ CI 在 Windows、Ubuntu、macOS 上覆盖 Node 22.19 和 Node 24。Windows 未�
 3. 同步 README、示例配置和开发文档。
 4. 运行全部发布验证。
 5. 检查 `npm pack --dry-run --json --ignore-scripts`；包内只能包含 runtime 源码、README、changelog、license、包元数据和示例配置。
-6. 提交并推送 release 提交，不创建版本标签。
-7. 确认提交与 tarball 后执行 `npm publish`。
+6. 提交 release 提交，创建 annotated `v<version>` 标签，推送提交与标签。标签必须指向包含对应版本号和变更记录的发布提交。
+7. 确认提交、标签与 tarball 后执行 `npm publish`，或按 Staged Publishing 流程暂存并批准发布。
 8. 在干净 Pi 环境安装发布源，重启 Pi，验证 start/link、QQ 回合、命令卡片、双端 UI 和一个允许的出站文件。
 
 发布保持人工控制。CI 只验证发布就绪状态，不自动推送标签或发布 npm。
