@@ -4,7 +4,7 @@
 
 ## 项目目标
 
-`pi-agent-qqbot` 将唯一 QQ C2C owner 连接到终端中同一个原生 Pi session。它不是独立 Agent，也不是通用 QQ 命令代理。当前正式契约以 `README.md`、`docs/DEVELOPMENT.md`、`src/` 和 `test/` 为准；`docs/archive/` 只保存历史。
+`pi-dchll-qqbot` 将唯一 QQ C2C owner 连接到终端中同一个原生 Pi session。它不是独立 Agent，也不是通用 QQ 命令代理。当前正式契约以 `README.md`、`docs/DEVELOPMENT.md`、`src/` 和 `test/` 为准；`docs/archive/` 只保存历史。
 
 ## 开始任务前
 
@@ -52,7 +52,7 @@
 
 禁止直接修改 Pi、`node_modules`、私有 `AgentSession`、prototype 或内部 dispatcher。
 
-Pi 0.82 的 `getCommands()` 只能发现命令，`sendUserMessage()` 不执行 extension commands，也不展开 Skills/templates。不要通过 `as any`、反射或复制内部实现绕过。需要通用分发时，先给出上游公开 API 设计和替代方案，等待用户批准 Pi 核心修改。
+Pi 1.4.0 的 `getCommands()` 只能发现命令，`sendUserMessage()` 不执行 extension commands，也不展开 Skills/templates。不要通过 `as any`、反射或复制内部实现绕过。需要通用分发时，先给出上游公开 API 设计和替代方案，等待用户批准 Pi 核心修改。
 
 ## 诊断工作流
 
@@ -105,7 +105,7 @@ Windows symlink 测试只有在 Developer Mode/权限不足时允许跳过；其
 ## 文档同步要求
 
 - 新增或删除 QQ 命令：同步 README 命令表、help Keyboard、fallback 文本和测试。
-- 修改配置：同步 `pi-agent-qqbot.json.example`、README 字段表、config tests；破坏性变化需要新 schema。
+- 修改配置：同步 `pi-dchll-qqbot.json.example`、README 字段表、config tests；破坏性变化需要新 schema。
 - 修改媒体策略：同步 README 媒体与安全说明以及 characterization tests。
 - 修改 UI：同步 README 双端 UI 边界与 native runtime integration tests。
 - 修改版本或依赖：同步 package/lockfile、CHANGELOG 和开发环境要求。

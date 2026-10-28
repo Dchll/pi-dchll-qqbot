@@ -1,6 +1,6 @@
 # 开发指南
 
-本文档是 `pi-agent-qqbot` 1.x 的开发与排障手册。用户安装和操作见根目录 `README.md`，Agent 工作约束见根目录 `AGENTS.md`。历史设计只保存在 `docs/archive/`，不得把归档内容当作当前行为依据。
+本文档是 `pi-dchll-qqbot` 0.x 的开发与排障手册。用户安装和操作见根目录 `README.md`，Agent 工作约束见根目录 `AGENTS.md`。历史设计只保存在 `docs/archive/`，不得把归档内容当作当前行为依据。
 
 ## 1. 开发环境
 
@@ -8,7 +8,7 @@
 
 - Node.js 22.19 或更高版本
 - 支持 lockfile 的 npm
-- Pi `>=0.82.0 <1.0.0`
+- Pi `>=1.4.0 <2.0.0`（仅在最新版本 Pi `1.4.0` 测试通过）
 - 原生 Windows、macOS 或 Linux
 
 安装锁文件中的准确依赖图：
@@ -39,10 +39,10 @@ npm run verify
 从本地 checkout 安装到 Pi：
 
 ```bash
-pi install /absolute/path/to/pi-agent-qqbot
+pi install /absolute/path/to/pi-dchll-qqbot
 ```
 
-修改扩展源码后需要完整重启 Pi。配置文件位于 `~/.pi/agent/pi-agent-qqbot.json`，不在仓库内。不要用真实凭据运行会记录命令输出的诊断脚本。
+修改扩展源码后需要完整重启 Pi。配置文件位于 `~/.pi/agent/pi-dchll-qqbot.json`，不在仓库内。不要用真实凭据运行会记录命令输出的诊断脚本。
 
 ## 3. 目录和模块地图
 
@@ -132,13 +132,13 @@ QQ Gateway event
 普通消息的 origin 关联分四步：
 
 1. `handleInbound()` 在调用 `sendUserMessage()` 前写入 `pendingQQ`，并保存 target、原始消息、回复预算和 cleanup。
-2. Pi 发出 `input` event。只有 `source === "extension"` 且文本与队首 pending prompt 相同时，QQ origin 才进入 `acceptedOrigins`；其他输入记录为 terminal origin。
+2. Pi 发出 `input` event。文本与队首 pending prompt 相同时，QQ origin 进入 `acceptedOrigins`，不依赖宿主上报的 input source；其他输入记录为 terminal origin。
 3. `agent_end` 只保存最后一条 assistant 文本。
 4. `agent_settled` 同步弹出 origin 与输出。只有仍属于当前 generation 的 QQ origin 才能回复 QQ，最后统一释放附件、交互和交付上下文。
 
 如果出现“终端有回复但 QQ 没回复”，优先检查 `acceptedOrigins`、`agentOutputs`、generation、Gateway 状态和 `replyBudgets` 是否同步，而不是先修改格式化器。
 
-Pi 忙碌时，QQ 输入通过 `sendUserMessage(..., { deliverAs: "followUp" })` 排队。不要自行增加插件队列长度限制；Pi 原生队列负责调度。
+Pi 忙碌时，QQ 输入通过 `sendUserMessage(..., { deliverAs: "steer" })` 引导当前回合。不要自行增加插件队列长度限制；Pi 原生 Steering 机制负责调度。
 
 ## 6. QQ 命令链路
 
@@ -205,7 +205,7 @@ QQ 平台每条消息最多四次被动回复。`ReplyBudget` 是唯一序号分
 
 ## 9. 配置契约
 
-- 唯一文件：`~/.pi/agent/pi-agent-qqbot.json`
+- 唯一文件：`~/.pi/agent/pi-dchll-qqbot.json`
 - 唯一 schema：`schemaVersion: 5`
 - 必填身份：`appId`、`clientSecret`、`ownerOpenId`
 - 默认环境：`sandbox: true`
@@ -219,7 +219,7 @@ QQ 平台每条消息最多四次被动回复。`ReplyBudget` 是唯一序号分
 2. `config-repository.ts`：是 missing、malformed、read failure 还是 unsupported schema。
 3. `normalize-config.ts`：默认值和规范化结果。
 4. `validateConfig()`：启动前必填字段。
-5. `pi-agent-qqbot.json.example` 与 README 是否同步。
+5. `pi-dchll-qqbot.json.example` 与 README 是否同步。
 
 不新增旧 schema 兼容、字段别名或自动迁移。需要新语义时提升 schema 并同步删除旧规则。
 
@@ -306,8 +306,8 @@ CI 在 Windows、Ubuntu、macOS 上覆盖 Node 22.19 和 Node 24。Windows 未�
 3. 同步 README、示例配置和开发文档。
 4. 运行全部发布验证。
 5. 检查 `npm pack --dry-run --json --ignore-scripts`；包内只能包含 runtime 源码、README、changelog、license、包元数据和示例配置。
-6. 提交 release，创建 annotated `v<version>` 标签，推送提交与标签。
-7. 确认标签与 tarball 后执行 `npm publish`。
+6. 提交并推送 release 提交，不创建版本标签。
+7. 确认提交与 tarball 后执行 `npm publish`。
 8. 在干净 Pi 环境安装发布源，重启 Pi，验证 start/link、QQ 回合、命令卡片、双端 UI 和一个允许的出站文件。
 
 发布保持人工控制。CI 只验证发布就绪状态，不自动推送标签或发布 npm。

@@ -44,7 +44,7 @@ export class FileConfigRepository {
 
 	async save(config: LoadConfigResult["config"]): Promise<void> {
 		const directory = dirname(this.path);
-		const temporary = join(directory, `.${Date.now()}-pi-agent-qqbot.json.tmp`);
+		const temporary = join(directory, `.${Date.now()}-pi-dchll-qqbot.json.tmp`);
 		try {
 			await mkdir(directory, { recursive: true });
 			await writeFile(temporary, `${JSON.stringify(config, null, "\t")}\n`, { encoding: "utf8", mode: 0o600 });

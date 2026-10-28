@@ -2,55 +2,27 @@
 
 All notable changes to this project are documented in this file.
 
-## 1.0.4 - 2026-07-28
+## 0.0.1 - 2026-10-28
 
-### Changed
-
-- Added Pi Package Gallery preview metadata while keeping the banner remotely hosted to avoid inflating the npm tarball.
-- Refined npm search metadata and clarified the bilingual README introduction and purpose.
-
-## 1.0.3 - 2026-07-24
-
-### Changed
-
-- Reassigned `/qqbot-start` to first-owner bootstrap and moved normal Gateway startup into `/qqbot-link`.
-- The first private QQ sender can now be confirmed locally and persisted as `ownerOpenId` without manual OpenID lookup.
-
-## 1.0.2 - 2026-07-24
-
-### Added
-
-- Added the project banner to the bilingual README for GitHub, npm, and Pi Packages presentation.
-
-## 1.0.1 - 2026-07-24
-
-### Changed
-
-- Rewrote the npm README as a complete bilingual English and Simplified Chinese guide.
-- Aligned published Pi peer dependency metadata with Pi Packages discovery requirements.
-
-## 1.0.0 - 2026-07-24
-
-First stable release.
+Initial independent release of `pi-dchll-qqbot`, forked from `gtiders/pi-agent-qqbot` 1.0.4.
 
 ### Added
 
 - Native Pi session linking for one configured QQ C2C owner.
-- QQ command keyboards for model, thinking, session, status, compaction, and turn control workflows.
-- Shared terminal and QQ interactions for standard `ctx.ui` dialogs.
-- Generic remote operation of extension-created `ctx.ui.custom()` components through TUI snapshots, keys, and bracketed-paste text input.
-- Inbound image, voice, document, and file processing without extension-level product quotas.
-- Verified local-file delivery through QQ's official chunked upload protocol.
+- QQ command keyboards for models, thinking levels, sessions, status, compaction, and turn control.
+- Shared terminal and QQ interactions for standard extension dialogs and custom UI.
+- Inbound image, voice, document, and file processing.
+- Verified local-file delivery through QQ's official chunked-upload protocol.
 - Local multi-process Gateway ownership and controlled takeover.
-- Native Windows, macOS, and Linux support.
 
 ### Changed
 
-- Configuration schema 5 uses denylist media policy. Empty lists add no product-level restriction.
-- Pi and Pi TUI dependencies now declare a compatible release range beginning at 0.82.0; `package-lock.json` retains reproducible development resolution.
+- Renamed the npm package, configuration file, runtime identity, and temporary-resource paths to `pi-dchll-qqbot`.
+- Initialized the independent package version at 0.0.1.
+- Updated package metadata and documentation for the new repository.
+- Limited the supported Pi range to `>=1.4.0 <2.0.0` and tested against Pi `1.4.0` only.
+- Changed busy-session QQ input from follow-up delivery to native Steering.
 
-### Removed
+### Fixed
 
-- Obsolete configuration schemas, migration paths, WSL path translation, legacy runtime implementations, and pre-native-session compatibility behavior.
-
-Pre-1.0 development releases remain available through Git tags `v0.5.0` through `v0.10.0`. Historical design and implementation plans are archived under `docs/archive/` and are not current product documentation.
+- Matched pending QQ prompts independently of the host-reported input source, covering both extension and RPC injection paths.

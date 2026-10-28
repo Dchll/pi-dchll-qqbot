@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
-const workspace = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-package-"));
+const workspace = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-package-"));
 
 function runNpm(args, options) {
   const command = process.platform === "win32" ? process.env.ComSpec ?? "cmd.exe" : "npm";
@@ -24,10 +24,10 @@ try {
   assert.equal(packed.status, 0, packed.error?.message ?? packed.stderr ?? packed.stdout ?? "npm pack failed");
   const [result] = JSON.parse(packed.stdout);
   const paths = result.files.map((file) => file.path);
-  for (const required of ["src/index.ts", "README.md", "CHANGELOG.md", "LICENSE", "pi-agent-qqbot.json.example"]) assert.ok(paths.includes(required), `missing ${required}`);
-  assert.ok(!paths.includes("pi-agent-qqbot.png"), "banner should remain remotely hosted instead of inflating the runtime package");
+  for (const required of ["src/index.ts", "README.md", "CHANGELOG.md", "LICENSE", "pi-dchll-qqbot.json.example"]) assert.ok(paths.includes(required), `missing ${required}`);
+  assert.ok(!paths.includes("pi-dchll-qqbot.png"), "banner should remain remotely hosted instead of inflating the runtime package");
   for (const path of paths) {
-    for (const forbidden of [/\.test\.ts$/, /^test\//, /^docs\//, /pi-agent-qqbot\.json$/, /\.env/, /\.git/, /\.pi-subagents/]) assert.doesNotMatch(path, forbidden);
+    for (const forbidden of [/\.test\.ts$/, /^test\//, /^docs\//, /pi-dchll-qqbot\.json$/, /\.env/, /\.git/, /\.pi-subagents/]) assert.doesNotMatch(path, forbidden);
   }
   const consumer = join(workspace, "consumer");
   await import("node:fs/promises").then((fs) => fs.mkdir(consumer));
@@ -36,13 +36,15 @@ try {
   assert.equal(installed.status, 0, installed.error?.message ?? installed.stderr ?? installed.stdout ?? "npm install failed");
   const tree = runNpm(["ls", "--omit=dev", "--legacy-peer-deps"], { cwd: consumer, encoding: "utf8", env: npmEnv });
   assert.equal(tree.status, 0, tree.error?.message ?? tree.stderr ?? tree.stdout ?? "npm ls failed");
-  const metadata = JSON.parse(await readFile(join(consumer, "node_modules", "pi-agent-qqbot", "package.json"), "utf8"));
+  const metadata = JSON.parse(await readFile(join(consumer, "node_modules", "pi-dchll-qqbot", "package.json"), "utf8"));
   assert.deepEqual(Object.keys(metadata.peerDependencies).sort(), ["@earendil-works/pi-coding-agent", "@earendil-works/pi-tui", "typebox"]);
   assert.equal(metadata.publishConfig?.access, "public");
   assert.ok(metadata.keywords?.includes("pi-package"));
-  assert.equal(metadata.pi?.image, "https://raw.githubusercontent.com/gtiders/pi-agent-qqbot/main/pi-agent-qqbot.png");
-  assert.match(metadata.repository?.url ?? "", /github\.com\/gtiders\/pi-agent-qqbot/);
-  for (const range of Object.values(metadata.peerDependencies)) assert.equal(range, "*");
+  assert.equal(metadata.pi?.image, "https://raw.githubusercontent.com/Dchll/pi-dchll-qqbot/main/pi-dchll-qqbot.png");
+  assert.match(metadata.repository?.url ?? "", /github\.com\/Dchll\/pi-dchll-qqbot/);
+  assert.equal(metadata.peerDependencies["@earendil-works/pi-coding-agent"], ">=1.4.0 <2.0.0");
+  assert.equal(metadata.peerDependencies["@earendil-works/pi-tui"], ">=1.4.0 <2.0.0");
+  assert.equal(metadata.peerDependencies.typebox, "*");
   console.log(`package check passed (${paths.length} files)`);
 } finally {
   await rm(workspace, { recursive: true, force: true });

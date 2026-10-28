@@ -11,7 +11,7 @@ import type { PiAgentQQBotConfig } from "../application/ports.ts";
 import { NativeSessionRuntime } from "./native-session-runtime.ts";
 import { formatBytes } from "../infrastructure/media/outbound-media.ts";
 
-const RUNTIME_SYMBOL = Symbol.for("pi-agent-qqbot.native-session-runtime.v1");
+const RUNTIME_SYMBOL = Symbol.for("pi-dchll-qqbot.native-session-runtime.v1");
 const globalState = globalThis as typeof globalThis & {
 	[RUNTIME_SYMBOL]?: NativeSessionRuntime;
 };
@@ -26,7 +26,7 @@ export default function registerExtension(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "qq_send_local_file",
 		label: "Send Local File to QQ",
-		description: "Send one real local computer file to the QQ conversation that requested the current task. Use only when that QQ user explicitly asks to send, upload, or transfer a local image or file. The target and reply metadata are bound by pi-agent-qqbot; provide only the local path.",
+		description: "Send one real local computer file to the QQ conversation that requested the current task. Use only when that QQ user explicitly asks to send, upload, or transfer a local image or file. The target and reply metadata are bound by pi-dchll-qqbot; provide only the local path.",
 		parameters: Type.Object({
 			path: Type.String({ description: "Local file path returned by a tool or explicitly provided by the QQ user" }),
 		}),
@@ -45,7 +45,7 @@ export default function registerExtension(pi: ExtensionAPI): void {
 	const requireConfig = (ctx: ExtensionCommandContext): boolean => {
 		const invalid = validateConfig(currentConfig);
 		if (invalid) {
-			ctx.ui.notify(`pi-agent-qqbot 配置无效：${invalid}`, "warning");
+			ctx.ui.notify(`pi-dchll-qqbot 配置无效：${invalid}`, "warning");
 			return false;
 		}
 		return true;
@@ -56,7 +56,7 @@ export default function registerExtension(pi: ExtensionAPI): void {
 		handler: async (_args, ctx) => {
 			const bootstrapInvalid = validateBootstrapConfig(currentConfig);
 			if (bootstrapInvalid) {
-				ctx.ui.notify(`pi-agent-qqbot 配置无效：${bootstrapInvalid}`, "warning");
+				ctx.ui.notify(`pi-dchll-qqbot 配置无效：${bootstrapInvalid}`, "warning");
 				return;
 			}
 			if (currentConfig.ownerOpenId) {
@@ -69,7 +69,7 @@ export default function registerExtension(pi: ExtensionAPI): void {
 					claimOwner: async (userOpenId) => {
 						const approved = await ctx.ui.confirm(
 							"绑定 QQ 用户？",
-							`检测到 QQ C2C user_openid：${userOpenId}\n确认将其写入本机 pi-agent-qqbot 配置？`,
+							`检测到 QQ C2C user_openid：${userOpenId}\n确认将其写入本机 pi-dchll-qqbot 配置？`,
 						);
 						if (!approved) return false;
 						try {
@@ -107,7 +107,7 @@ export default function registerExtension(pi: ExtensionAPI): void {
 				const link = runtime.link(ctx);
 				ctx.ui.notify(`QQ Gateway 已启动并绑定到当前 Pi 会话 ${link.currentSessionId}`, "info");
 			} catch (error) {
-				ctx.ui.notify(`pi-agent-qqbot link 失败：${safeError(error)}`, "error");
+				ctx.ui.notify(`pi-dchll-qqbot link 失败：${safeError(error)}`, "error");
 			}
 		},
 	});
@@ -155,12 +155,12 @@ export default function registerExtension(pi: ExtensionAPI): void {
 			currentConfig = loaded.config;
 			runtime.configure(currentConfig);
 			runtime.onSessionStart(ctx);
-			if (loaded.missing && ctx.hasUI) ctx.ui.notify("pi-agent-qqbot 未找到配置。", "info");
+			if (loaded.missing && ctx.hasUI) ctx.ui.notify("pi-dchll-qqbot 未找到配置。", "info");
 		} catch (error) {
 			currentConfig = runtimeConfigFallback();
 			if (ctx.hasUI) {
 				const code = error instanceof ConfigRepositoryError ? error.code : "read_failed";
-				ctx.ui.notify(`pi-agent-qqbot 配置读取失败：${code}`, "warning");
+				ctx.ui.notify(`pi-dchll-qqbot 配置读取失败：${code}`, "warning");
 			}
 		}
 	});

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-export const CONFIG_FILENAME = "pi-agent-qqbot.json";
+export const CONFIG_FILENAME = "pi-dchll-qqbot.json";
 
 export interface ConfigPathApi {
 	join(...parts: string[]): string;

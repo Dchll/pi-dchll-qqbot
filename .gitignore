@@ -8,5 +8,5 @@ node_modules/
 .pi-subagents/
 
 # Real local configuration files are never committed.
-pi-agent-qqbot.json
+pi-dchll-qqbot.json
 pi-qqbot.json

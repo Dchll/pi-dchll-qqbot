@@ -56,7 +56,7 @@ export class AttachmentDownloader {
 	private readonly request: NonNullable<AttachmentDownloaderOptions["request"]>;
 
 	constructor(options: AttachmentDownloaderOptions) {
-		this.workspace = join(tmpdir(), "pi-agent-qqbot", safeSegment(options.runtimeId), safeSegment(options.messageId));
+		this.workspace = join(tmpdir(), "pi-dchll-qqbot", safeSegment(options.runtimeId), safeSegment(options.messageId));
 		this.signal = options.signal;
 		this.onProgress = options.onProgress;
 		this.request = options.request ?? requestWithValidatedRedirects;
@@ -190,7 +190,7 @@ async function requestPinned(url: URL, signal: AbortSignal): Promise<IncomingMes
 			{
 				method: "GET",
 				signal,
-				headers: { Accept: "*/*", "User-Agent": "pi-agent-qqbot/0.7" },
+				headers: { Accept: "*/*", "User-Agent": "pi-dchll-qqbot/0.7" },
 				lookup: (_hostname, options, callback) => {
 					const wantsAll = typeof options === "object" && options !== null && options.all === true;
 					if (wantsAll) callback(null, addresses);

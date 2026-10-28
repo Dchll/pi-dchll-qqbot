@@ -228,9 +228,9 @@ export class NativeSessionRuntime {
 					else if (connection === "connecting") this.state.setGateway("starting");
 					else if (connection === "error") this.state.setGateway("failed");
 					else if (this.state.gateway !== "stopping") this.state.setGateway("stopped");
-					if (detail && config.logging.level === "debug") console.error(`[pi-agent-qqbot] ${detail}`);
+					if (detail && config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${detail}`);
 				},
-				log: (message) => { if (config.logging.level === "debug") console.error(`[pi-agent-qqbot] ${message}`); },
+				log: (message) => { if (config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${message}`); },
 				});
 				this.transport = transport;
 				await transport.gateway.connect();
@@ -264,9 +264,9 @@ export class NativeSessionRuntime {
 						else if (connection === "connecting") this.state.setGateway("starting");
 						else if (connection === "error") this.state.setGateway("failed");
 						else if (this.state.gateway !== "stopping") this.state.setGateway("stopped");
-						if (detail && config.logging.level === "debug") console.error(`[pi-agent-qqbot] ${detail}`);
+						if (detail && config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${detail}`);
 					},
-					log: (message) => { if (config.logging.level === "debug") console.error(`[pi-agent-qqbot] ${message}`); },
+					log: (message) => { if (config.logging.level === "debug") console.error(`[pi-dchll-qqbot] ${message}`); },
 				});
 				this.transport = transport;
 				await transport.gateway.connect();
@@ -331,13 +331,11 @@ export class NativeSessionRuntime {
 	}
 
 	onInput(event: InputEvent): void {
-		if (event.source === "extension") {
-			const pending = this.pendingQQ[0];
-			if (pending && pending.prompt === event.text) {
-				this.pendingQQ.shift();
-				this.acceptedOrigins.push(pending.origin);
-				return;
-			}
+		const pending = this.pendingQQ[0];
+		if (pending && pending.prompt === event.text) {
+			this.pendingQQ.shift();
+			this.acceptedOrigins.push(pending.origin);
+			return;
 		}
 		this.acceptedOrigins.push({ source: "terminal" });
 	}
@@ -435,7 +433,7 @@ export class NativeSessionRuntime {
 			];
 			try {
 				this.requirePi().sendUserMessage(content, {
-					...(this.currentContext?.isIdle() === false ? { deliverAs: "followUp" as const } : {}),
+					...(this.currentContext?.isIdle() === false ? { deliverAs: "steer" as const } : {}),
 				});
 			} catch (error) {
 				const index = this.pendingQQ.findIndex((entry) => entry.origin.messageId === message.id);
@@ -649,7 +647,7 @@ export class NativeSessionRuntime {
 	}
 
 	private requireConfig(): PiAgentQQBotConfig {
-		if (!this.config) throw new Error("pi-agent-qqbot configuration is not loaded");
+		if (!this.config) throw new Error("pi-dchll-qqbot configuration is not loaded");
 		return this.config;
 	}
 

@@ -1,4 +1,4 @@
-/** Shared types for the pi-agent-qqbot extension. */
+/** Shared types for the pi-dchll-qqbot extension. */
 
 /** Pi SDK-compatible inline image payload. */
 export interface QQImageContent {

@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 
 const target = resolve(process.argv[2] ?? ".");
-const agentDir = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-smoke-"));
+const agentDir = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-smoke-"));
 const piArgs = ["--mode", "rpc", "--no-session", "--no-extensions", "-e", join(target, "src", "index.ts")];
 const command = process.platform === "win32" ? process.env.ComSpec ?? "cmd.exe" : "pi";
 const args = process.platform === "win32" ? ["/d", "/s", "/c", "pi", ...piArgs] : piArgs;

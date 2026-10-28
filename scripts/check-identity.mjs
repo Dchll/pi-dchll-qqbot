@@ -3,7 +3,7 @@ import { extname, relative, resolve } from "node:path";
 
 const root = process.cwd();
 const roots = [resolve(root, "src")];
-const files = [resolve(root, "package.json"), resolve(root, "README.md"), resolve(root, "pi-agent-qqbot.json.example")];
+const files = [resolve(root, "package.json"), resolve(root, "README.md"), resolve(root, "pi-dchll-qqbot.json.example")];
 async function collect(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);

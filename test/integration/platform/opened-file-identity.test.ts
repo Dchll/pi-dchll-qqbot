@@ -7,7 +7,7 @@ import test from "node:test";
 import { LocalFileError, openVerifiedLocalFile } from "../../../src/infrastructure/platform/opened-file-identity.ts";
 
 async function withRoot(run: (root: string) => Promise<void>): Promise<void> {
-	const root = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-file-test-"));
+	const root = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-file-test-"));
 	try {
 		await run(root);
 	} finally {
@@ -82,7 +82,7 @@ test("rejects files inside a denied root", async () => {
 
 test("allows files outside denied roots", async () => {
 	await withRoot(async (root) => {
-		const denied = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-denied-"));
+		const denied = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-denied-"));
 		try {
 			const path = join(root, "report.txt");
 			await writeFile(path, "report");
@@ -119,7 +119,7 @@ test("rejects hard-linked files", async () => {
 
 test("rejects symlinks that resolve inside denied roots", async (context) => {
 	await withRoot(async (root) => {
-		const outside = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-outside-"));
+		const outside = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-outside-"));
 		try {
 			const target = join(outside, "secret.txt");
 			await writeFile(target, "secret");
@@ -149,7 +149,7 @@ test("rejects a Windows junction that resolves inside denied roots", async (cont
 		return;
 	}
 	await withRoot(async (root) => {
-		const outside = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-outside-"));
+		const outside = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-outside-"));
 		try {
 			await writeFile(join(outside, "secret.txt"), "secret");
 			const junction = join(root, "outside-junction");

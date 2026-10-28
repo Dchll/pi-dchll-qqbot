@@ -70,6 +70,15 @@ test("only QQ-originated settled output is returned to QQ", async () => {
 	assert.equal(harness.sent.length, count);
 });
 
+test("matches a pending QQ prompt reported by an RPC host", async () => {
+	const harness = createHarness(true, [], [], "rpc");
+	await harness.runtime.start(harness.context);
+	harness.runtime.link(harness.context);
+	await harness.runtime.handleInbound(message("qq-rpc", "hello from RPC"));
+	harness.runtime.onAgentEnd(agentEnd("RPC answer"));
+	await harness.runtime.onAgentSettled();
+	assert.equal(harness.sent.at(-1)?.text.includes("RPC answer"), true);
+});
 test("unlink suppresses a stale QQ reply without suppressing native output", async () => {
 	const harness = createHarness();
 	await harness.runtime.start(harness.context);
@@ -112,12 +121,12 @@ test("unlinked input is not injected and QQ cannot execute local controls", asyn
 	assert.match(harness.sent.at(-1)?.text ?? "", /只能由本机 Pi 终端执行/);
 });
 
-test("QQ input received while Pi is busy is delivered as a native follow-up", async () => {
+test("QQ input received while Pi is busy steers the active turn", async () => {
 	const harness = createHarness(false);
 	await harness.runtime.start(harness.context);
 	harness.runtime.link(harness.context);
-	await harness.runtime.handleInbound(message("qq-follow-up", "wait your turn"));
-	assert.deepEqual(harness.injected[0]?.options, { deliverAs: "followUp" });
+	await harness.runtime.handleInbound(message("qq-steering", "guide this turn"));
+	assert.deepEqual(harness.injected[0]?.options, { deliverAs: "steer" });
 });
 
 test("does not impose an extension-level queue length", async () => {
@@ -128,7 +137,7 @@ test("does not impose an extension-level queue length", async () => {
 		await harness.runtime.handleInbound(message(`qq-queued-${index}`, `queued ${index}`));
 	}
 	assert.equal(harness.injected.length, 25);
-	assert.ok(harness.injected.every((entry) => (entry.options as { deliverAs?: string }).deliverAs === "followUp"));
+	assert.ok(harness.injected.every((entry) => (entry.options as { deliverAs?: string }).deliverAs === "steer"));
 });
 
 test("keeps inbound temporary resources until the owning agent turn settles", async () => {
@@ -407,6 +416,7 @@ function createHarness(
 	idle = true,
 	models: Array<Record<string, unknown>> = [],
 	sessions: SessionInfo[] = [],
+	inputSource: "extension" | "rpc" = "extension",
 ) {
 	const sent: Array<{ target: QQReplyTarget; text: string; sequence: number; keyboard?: QQKeyboard }> = [];
 	const injected: Array<{ content: unknown; options: unknown }> = [];
@@ -451,7 +461,7 @@ function createHarness(
 		sendUserMessage(content: unknown, options: unknown) {
 			injected.push({ content, options });
 			const text = (content as Array<{ type: string; text?: string }>).find((part) => part.type === "text")?.text ?? "";
-			runtime.onInput({ type: "input", text, source: "extension" });
+			runtime.onInput({ type: "input", text, source: inputSource });
 		},
 		getThinkingLevel: () => thinkingLevel,
 		setThinkingLevel(level: string) {

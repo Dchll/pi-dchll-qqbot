@@ -8,7 +8,7 @@ import { ConfigRepositoryError, FileConfigRepository } from "../../../src/infras
 import { normalizeConfig } from "../../../src/infrastructure/config/normalize-config.ts";
 
 async function withRoot(run: (root: string) => Promise<void>): Promise<void> {
-	const root = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-config-"));
+	const root = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-config-"));
 	try {
 		await run(root);
 	} finally {
@@ -19,7 +19,7 @@ async function withRoot(run: (root: string) => Promise<void>): Promise<void> {
 test("ignores the old filename and returns schema 5 defaults for a missing config", async () => {
 	await withRoot(async (root) => {
 		await writeFile(join(root, "pi-qqbot.json"), JSON.stringify({ enabled: true }));
-		const path = join(root, "pi-agent-qqbot.json");
+		const path = join(root, "pi-dchll-qqbot.json");
 		const repository = new FileConfigRepository(path);
 		const loaded = await repository.load();
 		assert.equal(loaded.missing, true);
@@ -29,7 +29,7 @@ test("ignores the old filename and returns schema 5 defaults for a missing confi
 
 test("rejects obsolete config schemas", async () => {
 	await withRoot(async (root) => {
-		const path = join(root, "pi-agent-qqbot.json");
+		const path = join(root, "pi-dchll-qqbot.json");
 		const repository = new FileConfigRepository(path);
 		await writeFile(path, JSON.stringify({ schemaVersion: 4 }));
 		await assert.rejects(
@@ -40,7 +40,7 @@ test("rejects obsolete config schemas", async () => {
 });
 test("classifies malformed JSON and non-object roots", async () => {
 	await withRoot(async (root) => {
-		const path = join(root, "pi-agent-qqbot.json");
+		const path = join(root, "pi-dchll-qqbot.json");
 		const repository = new FileConfigRepository(path);
 		for (const invalid of ["{", "[]", "null"]) {
 			await writeFile(path, invalid);
@@ -54,7 +54,7 @@ test("classifies malformed JSON and non-object roots", async () => {
 
 test("persists a confirmed schema 5 owner configuration", async () => {
 	await withRoot(async (root) => {
-		const path = join(root, "nested", "pi-agent-qqbot.json");
+		const path = join(root, "nested", "pi-dchll-qqbot.json");
 		const repository = new FileConfigRepository(path);
 		await repository.save(normalizeConfig({
 			schemaVersion: 5,

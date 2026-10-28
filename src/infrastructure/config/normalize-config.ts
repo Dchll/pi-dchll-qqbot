@@ -1,4 +1,4 @@
-/** Strict schema 5 config normalization for pi-agent-qqbot. */
+/** Strict schema 5 config normalization for pi-dchll-qqbot. */
 
 import { homedir } from "node:os";
 import { extname, join } from "node:path";
@@ -9,7 +9,7 @@ import type {
 	QQMediaSttConfig,
 } from "../../application/ports.ts";
 
-export const CONFIG_PATH = join(homedir(), ".pi", "agent", "pi-agent-qqbot.json");
+export const CONFIG_PATH = join(homedir(), ".pi", "agent", "pi-dchll-qqbot.json");
 
 const MEDIA_KINDS = new Set<QQMediaKind>(["image", "video", "voice", "file"]);
 

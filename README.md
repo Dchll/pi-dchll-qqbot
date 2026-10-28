@@ -1,8 +1,8 @@
 <p>
-  <img src="https://raw.githubusercontent.com/gtiders/pi-agent-qqbot/main/pi-agent-qqbot.png" alt="Pi Agent QQBot" width="1100">
+  <img src="https://raw.githubusercontent.com/Dchll/pi-dchll-qqbot/main/pi-dchll-qqbot.png" alt="Pi Dchll QQBot" width="1100">
 </p>
 
-# Pi Agent QQBot
+# Pi Dchll QQBot
 
 > [English](#english) | [简体中文](#简体中文)
 
@@ -20,7 +20,7 @@ Use the same live coding session from QQ when you are away from the terminal, wi
 
 ### Requirements
 
-- Pi `>=0.82.0 <1.0.0`
+- Pi `>=1.4.0 <2.0.0` (tested only with the latest Pi `1.4.0` release)
 - Node.js `>=22.19.0`
 - An official QQ bot with C2C direct messages enabled
 - Native Windows, macOS, or Linux
@@ -43,26 +43,26 @@ WSL path translation and mixed Windows/WSL installations are not supported.
 Install the published npm package:
 
 ```bash
-pi install npm:pi-agent-qqbot
+pi install npm:pi-dchll-qqbot
 ```
 
-You can also install a tagged GitHub release:
+You can also install directly from GitHub:
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.4
+pi install git:github.com/Dchll/pi-dchll-qqbot
 ```
 
 When HTTPS access to GitHub is unavailable, use SSH:
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.4
+pi install git:git@github.com:Dchll/pi-dchll-qqbot
 ```
 
 Completely exit and restart Pi after installation or upgrade.
 
 ### Configure
 
-Create `~/.pi/agent/pi-agent-qqbot.json`. On Windows, this is `%USERPROFILE%\.pi\agent\pi-agent-qqbot.json`.
+Create `~/.pi/agent/pi-dchll-qqbot.json`. On Windows, this is `%USERPROFILE%\.pi\agent\pi-dchll-qqbot.json`.
 
 ```json
 {
@@ -141,7 +141,7 @@ QQ commands are explicitly allowlisted and appear as a Keyboard when supported b
 | `/compact [instructions]` | Compact the active context. |
 | `/stop` | Abort the active Pi turn. |
 
-Normal QQ text is injected into the linked Pi session and uses Pi's native follow-up delivery while Pi is busy. Only output from QQ-originated turns is returned to QQ; output from terminal-originated turns remains in the terminal.
+Normal QQ text is injected into the linked Pi session and uses Pi's native steering delivery to guide the active turn while Pi is busy. Only output from QQ-originated turns is returned to QQ; output from terminal-originated turns remains in the terminal.
 
 ### Shared Interaction UI
 
@@ -177,7 +177,7 @@ With outbound media enabled, the `qq_send_local_file` tool can send a local file
 
 ### Development
 
-See the [development guide](https://github.com/gtiders/pi-agent-qqbot/blob/main/docs/DEVELOPMENT.md) for architecture, development, and release procedures, and [CHANGELOG](https://github.com/gtiders/pi-agent-qqbot/blob/main/CHANGELOG.md) for release history.
+See the [development guide](https://github.com/Dchll/pi-dchll-qqbot/blob/main/docs/DEVELOPMENT.md) for architecture, development, and release procedures, and [CHANGELOG](https://github.com/Dchll/pi-dchll-qqbot/blob/main/CHANGELOG.md) for release history.
 
 ### License
 
@@ -199,7 +199,7 @@ QQ 不是另起一个 Agent，而是同一 Pi runtime 的第二个输入端：�
 
 ## 环境要求
 
-- Pi `>=0.82.0 <1.0.0`
+- Pi `>=1.4.0 <2.0.0`（仅在最新版本 Pi `1.4.0` 测试通过）
 - Node.js `>=22.19.0`
 - 已启用 C2C 私聊消息的 QQ 官方机器人
 - 原生 Windows、macOS 或 Linux
@@ -222,26 +222,26 @@ QQ 不是另起一个 Agent，而是同一 Pi runtime 的第二个输入端：�
 安装 npm 正式版本：
 
 ```bash
-pi install npm:pi-agent-qqbot
+pi install npm:pi-dchll-qqbot
 ```
 
-也可以从 GitHub 的版本标签安装：
+也可以直接从 GitHub 安装：
 
 ```bash
-pi install git:github.com/gtiders/pi-agent-qqbot@v1.0.4
+pi install git:github.com/Dchll/pi-dchll-qqbot
 ```
 
 如果本机无法通过 HTTPS 连接 GitHub，可使用 SSH：
 
 ```bash
-pi install git:git@github.com:gtiders/pi-agent-qqbot@v1.0.4
+pi install git:git@github.com:Dchll/pi-dchll-qqbot
 ```
 
 安装或升级后必须完整退出并重新启动 Pi。
 
 ## 配置
 
-创建 `~/.pi/agent/pi-agent-qqbot.json`。Windows 路径为 `%USERPROFILE%\.pi\agent\pi-agent-qqbot.json`。
+创建 `~/.pi/agent/pi-dchll-qqbot.json`。Windows 路径为 `%USERPROFILE%\.pi\agent\pi-dchll-qqbot.json`。
 
 ```json
 {
@@ -329,7 +329,7 @@ QQ 命令采用显式白名单，并在客户端支持时显示 Keyboard：
 | `/compact [instructions]` | 压缩当前上下文。 |
 | `/stop` | 中止当前 Pi 回合。 |
 
-普通 QQ 文本会注入已绑定的 Pi 会话；Pi 忙碌时按原生 follow-up 投递。只有 QQ 发起的回合会回复 QQ，终端发起的输出只留在终端。
+普通 QQ 文本会注入已绑定的 Pi 会话；Pi 忙碌时通过原生 Steering 引导当前回合。只有 QQ 发起的回合会回复 QQ，终端发起的输出只留在终端。
 
 ## 双端交互界面
 
@@ -365,7 +365,7 @@ Pi 核心 TUI、外部 PTY 程序，以及仅由终端回合打开的自定义�
 
 ## 开发
 
-开发、架构与发布流程见 [开发指南](https://github.com/gtiders/pi-agent-qqbot/blob/main/docs/DEVELOPMENT.md)，发布记录见 [CHANGELOG](https://github.com/gtiders/pi-agent-qqbot/blob/main/CHANGELOG.md)。
+开发、架构与发布流程见 [开发指南](https://github.com/Dchll/pi-dchll-qqbot/blob/main/docs/DEVELOPMENT.md)，发布记录见 [CHANGELOG](https://github.com/Dchll/pi-dchll-qqbot/blob/main/CHANGELOG.md)。
 
 ## License
 

@@ -8,11 +8,11 @@ import { normalizeConfig } from "../../src/infrastructure/config/normalize-confi
 import { normalizeInputPath, QQOutboundDeliveryContext, QQOutboundMediaError } from "../../src/infrastructure/media/outbound-media";
 
 test("uses host-native paths and preserves outbound delivery behavior", async () => {
-	const root = await mkdtemp(join(tmpdir(), "pi-agent-qqbot-outbound-test-"));
+	const root = await mkdtemp(join(tmpdir(), "pi-dchll-qqbot-outbound-test-"));
 	try {
 		const textPath = join(root, "report.txt");
 		const imagePath = join(root, "photo.png");
-		await writeFile(textPath, "hello from pi-agent-qqbot\n");
+		await writeFile(textPath, "hello from pi-dchll-qqbot\n");
 		await writeFile(imagePath, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z5ZkAAAAASUVORK5CYII=", "base64"));
 
 		const windowsLookingPath = "C:\\Users\\tester\\Desktop\\a.png";
