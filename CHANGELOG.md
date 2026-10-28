@@ -26,3 +26,4 @@ Initial independent release of `pi-dchll-qqbot`, forked from `gtiders/pi-agent-q
 ### Fixed
 
 - Matched pending QQ prompts independently of the host-reported input source, covering both extension and RPC injection paths.
+- Assigned shared Steering replies to the latest input origin, preventing QQ replies from being dropped or terminal replies from leaking to QQ.

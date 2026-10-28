@@ -129,6 +129,30 @@ test("QQ input received while Pi is busy steers the active turn", async () => {
 	assert.deepEqual(harness.injected[0]?.options, { deliverAs: "steer" });
 });
 
+test("a QQ steering turn owns the shared reply after terminal input", async () => {
+	const harness = createHarness(false);
+	await harness.runtime.start(harness.context);
+	harness.runtime.link(harness.context);
+	harness.runtime.onInput({ type: "input", text: "terminal", source: "interactive", streamingBehavior: "steer" });
+	await harness.runtime.handleInbound(message("qq-shared-steering", "guide this turn"));
+	harness.runtime.onAgentEnd(agentEnd("shared steering answer"));
+	await harness.runtime.onAgentSettled();
+	assert.equal(harness.sent.at(-1)?.text.includes("shared steering answer"), true);
+	assert.equal(harness.cleanupCount(), 1);
+});
+
+test("terminal steering after QQ input keeps the shared reply off QQ", async () => {
+	const harness = createHarness(false);
+	await harness.runtime.start(harness.context);
+	harness.runtime.link(harness.context);
+	await harness.runtime.handleInbound(message("qq-before-terminal", "initial QQ input"));
+	harness.runtime.onInput({ type: "input", text: "terminal takeover", source: "interactive", streamingBehavior: "steer" });
+	harness.runtime.onAgentEnd(agentEnd("terminal-only answer"));
+	await harness.runtime.onAgentSettled();
+	assert.equal(harness.sent.length, 0);
+	assert.equal(harness.cleanupCount(), 1);
+});
+
 test("does not impose an extension-level queue length", async () => {
 	const harness = createHarness(false);
 	await harness.runtime.start(harness.context);

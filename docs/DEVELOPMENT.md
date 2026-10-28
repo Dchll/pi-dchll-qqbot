@@ -134,7 +134,7 @@ QQ Gateway event
 1. `handleInbound()` 在调用 `sendUserMessage()` 前写入 `pendingQQ`，并保存 target、原始消息、回复预算和 cleanup。
 2. Pi 发出 `input` event。文本与队首 pending prompt 相同时，QQ origin 进入 `acceptedOrigins`，不依赖宿主上报的 input source；其他输入记录为 terminal origin。
 3. `agent_end` 只保存最后一条 assistant 文本。
-4. `agent_settled` 同步弹出 origin 与输出。只有仍属于当前 generation 的 QQ origin 才能回复 QQ，最后统一释放附件、交互和交付上下文。
+4. `agent_settled` 取共享回合最后一个 origin 与最后一份输出。最后输入是 QQ 且仍属于当前 generation 时才回复 QQ；最后输入是终端时不镜像到 QQ。回合结束后统一释放全部 QQ origin 的附件、交互和交付上下文，避免 Steering 混入时错位或泄漏。
 
 如果出现“终端有回复但 QQ 没回复”，优先检查 `acceptedOrigins`、`agentOutputs`、generation、Gateway 状态和 `replyBudgets` 是否同步，而不是先修改格式化器。
 

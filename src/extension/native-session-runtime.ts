@@ -345,22 +345,27 @@ export class NativeSessionRuntime {
 	}
 
 	async onAgentSettled(): Promise<void> {
-		const origin = this.acceptedOrigins.shift();
-		const text = this.agentOutputs.shift() ?? "";
-		if (!origin || origin.source !== "qq") return;
-		const target = this.qqTargets.get(origin.messageId);
-		const budget = this.replyBudgets.get(origin.messageId);
+		const origins = this.acceptedOrigins.splice(0);
+		const origin = origins.at(-1);
+		const text = this.agentOutputs.splice(0).at(-1) ?? "";
 		try {
+			if (!origin || origin.source !== "qq") return;
 			if (!this.state.isCurrentQQOrigin(origin)) return;
+			const target = this.qqTargets.get(origin.messageId);
+			const budget = this.replyBudgets.get(origin.messageId);
 			if (!target || this.state.gateway !== "running") return;
 			await this.sendReply(target, text.trim() || EMPTY_REPLY, budget);
 		} finally {
-			await this.releaseQQMessage(origin.messageId);
+			for (const candidate of origins) {
+				if (candidate.source === "qq") await this.releaseQQMessage(candidate.messageId);
+			}
+
 		}
+
 	}
 
 	async sendLocalFile(path: string, kind: QQOutboundKind = "auto") {
-		const origin = this.acceptedOrigins[0];
+		const origin = this.acceptedOrigins.at(-1);
 		if (!origin || !this.state.isCurrentQQOrigin(origin)) throw new Error("No active QQ delivery context (delivery_context_closed)");
 		const message = this.qqMessages.get(origin.messageId);
 		const target = this.qqTargets.get(origin.messageId);
@@ -632,7 +637,7 @@ export class NativeSessionRuntime {
 	}
 
 	private uiInteractionDeliveryContext(): UIInteractionDeliveryContext | undefined {
-		const origin = this.acceptedOrigins[0];
+		const origin = this.acceptedOrigins.at(-1);
 		if (!origin || origin.source !== "qq" || !this.state.isCurrentQQOrigin(origin)) return undefined;
 		if (this.state.gateway !== "running" || !this.transport) return undefined;
 		const message = this.qqMessages.get(origin.messageId);
